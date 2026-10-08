@@ -1,1 +1,3 @@
-# projectv3
+james jenovah
+richard garganta
+joefred alvior
