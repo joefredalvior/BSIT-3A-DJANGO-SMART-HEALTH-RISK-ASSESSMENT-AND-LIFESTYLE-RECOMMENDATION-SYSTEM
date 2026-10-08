@@ -581,6 +581,117 @@ ALTER TABLE `tblinfo`
   ADD CONSTRAINT `tblinfo_user_id_4a36749d_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`);
 COMMIT;
 
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('User', 'Admin') DEFAULT 'User',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE health_profiles (
+    profile_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    age INT NOT NULL,
+    sex ENUM('Male', 'Female', 'Other') NOT NULL,
+    height_cm DECIMAL(5,2),
+    weight_kg DECIMAL(5,2),
+    blood_type VARCHAR(5),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE health_metrics (
+    metric_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    systolic_bp INT,
+    diastolic_bp INT,
+    heart_rate INT,
+    blood_sugar DECIMAL(6,2),
+    bmi DECIMAL(5,2),
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE lifestyle_profiles (
+    lifestyle_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    sleep_hours DECIMAL(4,2),
+    physical_activity VARCHAR(50),
+    smoking VARCHAR(30),
+    alcohol VARCHAR(30),
+    diet_type VARCHAR(50),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE medical_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    condition_name VARCHAR(150) NOT NULL,
+    medication VARCHAR(150),
+    family_history BOOLEAN DEFAULT FALSE,
+    notes TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE risk_assessments (
+    assessment_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    risk_score DECIMAL(5,2) NOT NULL,
+    risk_level VARCHAR(30) NOT NULL,
+    assessment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE risk_factors (
+    factor_id INT AUTO_INCREMENT PRIMARY KEY,
+    assessment_id INT NOT NULL,
+    factor_name VARCHAR(150) NOT NULL,
+    severity VARCHAR(30),
+    description TEXT,
+    FOREIGN KEY (assessment_id) REFERENCES risk_assessments(assessment_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE recommendations (
+    recommendation_id INT AUTO_INCREMENT PRIMARY KEY,
+    category VARCHAR(50) NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE user_recommendations (
+    user_recommendation_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    recommendation_id INT NOT NULL,
+    priority VARCHAR(30) DEFAULT 'Medium',
+    status VARCHAR(30) DEFAULT 'Pending',
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (recommendation_id) REFERENCES recommendations(recommendation_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE health_goals (
+    goal_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    goal_type VARCHAR(100) NOT NULL,
+    target_value DECIMAL(10,2),
+    current_value DECIMAL(10,2),
+    unit VARCHAR(30),
+    status VARCHAR(30) DEFAULT 'Active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
+);
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
