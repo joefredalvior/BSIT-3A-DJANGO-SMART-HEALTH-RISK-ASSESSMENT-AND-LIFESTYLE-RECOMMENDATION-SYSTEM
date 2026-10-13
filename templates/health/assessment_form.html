@@ -1,0 +1,166 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="page-header d-print-none" aria-label="Page header">
+  <div class="row align-items-center">
+    <div class="col">
+      <div class="page-pretitle">Health advisory</div>
+      <h2 class="page-title">Health Risk Assessment</h2>
+      <p class="text-secondary mt-2">
+        Answer the questions below to receive a personalised health risk score
+        and lifestyle recommendations.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-12">
+    <form method="post" action="" novalidate>
+      {% csrf_token %}
+
+      {% if errors %}
+        <div class="alert alert-danger" role="alert">
+          <h4 class="alert-title">Please correct the following</h4>
+          <ul class="mb-0">
+            {% for field, message in errors.items %}
+              <li>{{ field }}: {{ message }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <!-- About you -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">About you</h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label required" for="id_age">Age</label>
+              <input type="number" class="form-control {% if errors.age %}is-invalid{% endif %}"
+                     id="id_age" name="age" min="{{ limits.age.0 }}" max="{{ limits.age.1 }}"
+                     value="{{ form.age|default:'' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label required" for="id_sex">Sex</label>
+              <select class="form-select {% if errors.sex %}is-invalid{% endif %}" id="id_sex" name="sex" required>
+                <option value="">Select sex</option>
+                {% for value, label in sex_choices %}
+                  <option value="{{ value }}" {% if form.sex == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label required" for="id_height_cm">Height (cm)</label>
+              <input type="number" step="0.5" class="form-control {% if errors.height_cm %}is-invalid{% endif %}"
+                     id="id_height_cm" name="height_cm" min="{{ limits.height_cm.0 }}" max="{{ limits.height_cm.1 }}"
+                     value="{{ form.height_cm|default:'' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label required" for="id_weight_kg">Weight (kg)</label>
+              <input type="number" step="0.1" class="form-control {% if errors.weight_kg %}is-invalid{% endif %}"
+                     id="id_weight_kg" name="weight_kg" min="{{ limits.weight_kg.0 }}" max="{{ limits.weight_kg.1 }}"
+                     value="{{ form.weight_kg|default:'' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label required" for="id_waist_cm">Waist circumference (cm)</label>
+              <input type="number" step="0.5" class="form-control {% if errors.waist_cm %}is-invalid{% endif %}"
+                     id="id_waist_cm" name="waist_cm" min="{{ limits.waist_cm.0 }}" max="{{ limits.waist_cm.1 }}"
+                     value="{{ form.waist_cm|default:'' }}" required>
+              <small class="form-hint">Measure at the navel, relaxed.</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Measurements -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">Measurements</h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label required" for="id_systolic">Systolic (top number)</label>
+              <input type="number" class="form-control {% if errors.systolic %}is-invalid{% endif %}"
+                     id="id_systolic" name="systolic" min="{{ limits.systolic.0 }}" max="{{ limits.systolic.1 }}"
+                     value="{{ form.systolic|default:'' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label required" for="id_diastolic">Diastolic (bottom number)</label>
+              <input type="number" class="form-control {% if errors.diastolic %}is-invalid{% endif %}"
+                     id="id_diastolic" name="diastolic" min="{{ limits.diastolic.0 }}" max="{{ limits.diastolic.1 }}"
+                     value="{{ form.diastolic|default:'' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label required" for="id_sleep_hours">Sleep (hours per night)</label>
+              <input type="number" step="0.5" class="form-control {% if errors.sleep_hours %}is-invalid{% endif %}"
+                     id="id_sleep_hours" name="sleep_hours" min="{{ limits.sleep_hours.0 }}" max="{{ limits.sleep_hours.1 }}"
+                     value="{{ form.sleep_hours|default:'' }}" required>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lifestyle -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">Lifestyle</h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label required" for="id_activity_level">Physical activity</label>
+              <select class="form-select {% if errors.activity_level %}is-invalid{% endif %}" id="id_activity_level" name="activity_level" required>
+                <option value="">Select activity level</option>
+                {% for value, label in activity_choices %}
+                  <option value="{{ value }}" {% if form.activity_level == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required" for="id_smoking_status">Smoking</label>
+              <select class="form-select {% if errors.smoking_status %}is-invalid{% endif %}" id="id_smoking_status" name="smoking_status" required>
+                <option value="">Select smoking status</option>
+                {% for value, label in smoking_choices %}
+                  <option value="{{ value }}" {% if form.smoking_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required" for="id_alcohol_status">Alcohol</label>
+              <select class="form-select {% if errors.alcohol_status %}is-invalid{% endif %}" id="id_alcohol_status" name="alcohol_status" required>
+                <option value="">Select alcohol intake</option>
+                {% for value, label in alcohol_choices %}
+                  <option value="{{ value }}" {% if form.alcohol_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required" for="id_diet_quality">Diet</label>
+              <select class="form-select {% if errors.diet_quality %}is-invalid{% endif %}" id="id_diet_quality" name="diet_quality" required>
+                <option value="">Select diet quality</option>
+                {% for value, label in diet_choices %}
+                  <option value="{{ value }}" {% if form.diet_quality == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer d-flex align-items-center">
+        <p class="text-secondary m-0 me-auto">
+          <i class="fas fa-info-circle me-1"></i>
+          This tool provides general guidance and is not a medical diagnosis.
+        </p>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-heart-pulse me-1"></i> Get my health report
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+{% endblock %}

@@ -47,6 +47,61 @@
   --tblr-primary-rgb: 99, 102, 241;
 }
 
+[data-bs-theme-primary="blue"] {
+  --tblr-primary: #206bc4;
+  --tblr-primary-rgb: 32, 107, 196;
+}
+
+[data-bs-theme-primary="teal"] {
+  --tblr-primary: #0ca678;
+  --tblr-primary-rgb: 12, 166, 120;
+}
+
+[data-bs-theme-primary="green"] {
+  --tblr-primary: #2fb344;
+  --tblr-primary-rgb: 47, 179, 68;
+}
+
+[data-bs-theme-primary="cyan"] {
+  --tblr-primary: #0ca7c4;
+  --tblr-primary-rgb: 12, 167, 196;
+}
+
+[data-bs-theme-primary="purple"] {
+  --tblr-primary: #7c3aed;
+  --tblr-primary-rgb: 124, 58, 237;
+}
+
+[data-bs-theme-primary="azure"] {
+  --tblr-primary: #4299e1;
+  --tblr-primary-rgb: 66, 153, 225;
+}
+
+[data-bs-theme-primary="pink"] {
+  --tblr-primary: #d6336c;
+  --tblr-primary-rgb: 214, 51, 108;
+}
+
+[data-bs-theme-primary="red"] {
+  --tblr-primary: #d63939;
+  --tblr-primary-rgb: 214, 57, 57;
+}
+
+[data-bs-theme-primary="orange"] {
+  --tblr-primary: #fd7e14;
+  --tblr-primary-rgb: 253, 126, 20;
+}
+
+[data-bs-theme-primary="yellow"] {
+  --tblr-primary: #f59f00;
+  --tblr-primary-rgb: 245, 159, 0;
+}
+
+[data-bs-theme-primary="lime"] {
+  --tblr-primary: #74b816;
+  --tblr-primary-rgb: 116, 184, 22;
+}
+
 [data-bs-theme="dark"],
 body[data-bs-theme="dark"] [data-bs-theme="light"] {
   --tblr-body-bg: #0e1020;

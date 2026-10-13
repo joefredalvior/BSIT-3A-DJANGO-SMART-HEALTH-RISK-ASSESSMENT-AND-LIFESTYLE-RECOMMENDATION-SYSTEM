@@ -1,0 +1,191 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="page-header d-print-none" aria-label="Page header">
+  <div class="row align-items-center">
+    <div class="col">
+      <div class="page-pretitle">Health advisory report</div>
+      <h2 class="page-title">Your Health Risk Report</h2>
+      <p class="text-secondary mt-2">
+        Completed on {{ record.created_at|date:"d M Y, H:i" }}
+      </p>
+    </div>
+    <div class="col-auto">
+      <a href="{% url 'health:assessment_form' %}" class="btn">
+        <i class="fas fa-rotate me-1"></i> New assessment
+      </a>
+      <a href="{% url 'health:history' %}" class="btn">
+        <i class="fas fa-clock-rotate-left me-1"></i> History
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <!-- Score -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-secondary text-uppercase mb-2">Overall risk score</div>
+        <div class="display-4 fw-bold text-{{ record.level_colour }}">{{ record.risk_score }}<span class="fs-3 text-secondary">/100</span></div>
+        <div class="mt-2">
+          <span class="badge bg-{{ record.level_colour }} badge-pill">{{ record.risk_level }} risk</span>
+        </div>
+        <div class="progress mt-3">
+          <div class="progress-bar bg-{{ record.level_colour }}" style="width: {{ record.risk_score }}%" role="progressbar"></div>
+        </div>
+        <p class="text-secondary mt-3 mb-0">{{ record.summary }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key measurements -->
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Key measurements</h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-6 col-lg-3">
+            <div class="subheader">BMI</div>
+            <div class="h3 mb-0">{{ record.bmi|default:"-" }}</div>
+            <div class="text-secondary small">{{ record.bmi_category|default:"Not calculated" }}</div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="subheader">Blood pressure</div>
+            <div class="h3 mb-0">{{ record.systolic }}/{{ record.diastolic }}</div>
+            <div class="text-secondary small">{{ record.get_blood_pressure_band_display }}</div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="subheader">Waist</div>
+            <div class="h3 mb-0">{{ record.waist_cm }} cm</div>
+            <div class="text-secondary small">Height {{ record.height_cm }} cm</div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="subheader">Sleep</div>
+            <div class="h3 mb-0">{{ record.sleep_hours }} h</div>
+            <div class="text-secondary small">per night</div>
+          </div>
+        </div>
+        <hr>
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <div class="subheader">Activity</div>
+            <div>{{ record.get_activity_level_display }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subheader">Smoking</div>
+            <div>{{ record.get_smoking_status_display }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subheader">Alcohol</div>
+            <div>{{ record.get_alcohol_status_display }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subheader">Diet</div>
+            <div>{{ record.get_diet_quality_display }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Findings -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Risk factors identified</h3>
+        <div class="card-actions text-secondary small">Ordered by contribution to your score</div>
+      </div>
+      {% if record.findings %}
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>Factor</th>
+                <th>What we found</th>
+                <th class="w-1"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for finding in record.findings %}
+                <tr>
+                  <td class="fw-bold">{{ finding.label }}</td>
+                  <td class="text-secondary">{{ finding.detail }}</td>
+                  <td>
+                    <span class="badge bg-red-lt">+{{ finding.points }}</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body">
+          <div class="empty">
+            <div class="empty-icon text-success"><i class="fas fa-circle-check"></i></div>
+            <p class="empty-title">No risk factors identified</p>
+            <p class="empty-subtitle text-secondary">
+              All of your indicators are within the recommended ranges.
+            </p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-spa text-green me-2"></i>Personalised lifestyle recommendations
+        </h3>
+      </div>
+      {% if record.recommendations %}
+        <div class="card-body">
+          <div class="row g-3">
+            {% for rec in record.recommendations %}
+              <div class="col-md-6">
+                <div class="card card-sm">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-green-lt me-3">{{ forloop.counter }}</span>
+                      <div>
+                        <h4 class="mb-1">{{ rec.title }}</h4>
+                        <p class="text-secondary mb-0">{{ rec.advice }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <div class="card-body">
+          <div class="empty">
+            <div class="empty-icon text-success"><i class="fas fa-circle-check"></i></div>
+            <p class="empty-title">No changes needed right now</p>
+            <p class="empty-subtitle text-secondary">
+              Your lifestyle indicators are all within recommended ranges. Keep
+              up your current habits.
+            </p>
+          </div>
+        </div>
+      {% endif %}
+      <div class="card-footer">
+        <div class="alert alert-info mb-0" role="alert">
+          <div class="d-flex">
+            <div class="text-secondary"><i class="fas fa-info-circle fa-lg"></i></div>
+            <div>
+              <h4 class="alert-title">Important</h4>
+              <div class="text-secondary">{{ disclaimer }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

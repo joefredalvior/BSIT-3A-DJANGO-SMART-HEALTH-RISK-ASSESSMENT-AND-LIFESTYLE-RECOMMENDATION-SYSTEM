@@ -451,7 +451,7 @@ id="offcanvasSettings"
       theme: "light",
       "theme-base": "gray",
       "theme-font": "sans-serif",
-      "theme-primary": "indigo",
+      "theme-primary": "teal",
       "theme-radius": "1",
     };
 
@@ -464,6 +464,10 @@ id="offcanvasSettings"
         var value = window.localStorage["tabler-" + key] || themeConfig[key];
 
         if (!!value) {
+          // Apply the value, not just tick the radio. Without this the applied
+          // theme can disagree with the saved preference.
+          document.documentElement.setAttribute("data-bs-" + key, value);
+
           var radios = form.querySelectorAll(`[name="${key}"]`);
 
           if (!!radios) {
@@ -493,8 +497,6 @@ id="offcanvasSettings"
 
     resetButton.addEventListener("click", function () {
       for (var key in themeConfig) {
-        var value = themeConfig[key];
-        document.documentElement.removeAttribute("data-bs-" + key);
         window.localStorage.removeItem("tabler-" + key);
         url.searchParams.delete(key);
       }

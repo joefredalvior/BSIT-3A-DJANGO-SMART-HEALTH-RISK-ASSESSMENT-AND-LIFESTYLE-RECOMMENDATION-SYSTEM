@@ -1,13 +1,13 @@
 <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark dh-sidebar">
   <div class="container-fluid">
     <div class="navbar-brand navbar-brand-autodark dh-brand">
-      <a href="." class="d-flex align-items-center gap-2 text-decoration-none">
+      <a href="{% url 'dashboard' %}" class="d-flex align-items-center gap-2 text-decoration-none">
         <span class="dh-brand-mark">
-          <i class="fa-solid fa-shield-halved"></i>
+          <i class="fa-solid fa-heart-pulse"></i>
         </span>
         <span class="lh-1">
-          <span class="dh-brand-name">Project<span class="text-warning">V3</span></span>
-          <span class="dh-brand-sub">Management System</span>
+          <span class="dh-brand-name">Health<span class="text-warning">Wise</span></span>
+          <span class="dh-brand-sub">Advisory System</span>
         </span>
       </a>
     </div>
@@ -38,6 +38,24 @@
               <i class="fa fa-dashboard"></i>
             </span>
             <span class="nav-link-title">Dashboard</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'health' and request.resolver_match.url_name == 'assessment_form' %}active{% endif %}" href="{% url 'health:assessment_form' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-heart-pulse"></i>
+            </span>
+            <span class="nav-link-title">Health Assessment</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'health' and request.resolver_match.url_name == 'history' %}active{% endif %}" href="{% url 'health:history' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-clock-rotate-left"></i>
+            </span>
+            <span class="nav-link-title">My Health History</span>
           </a>
         </li>
 

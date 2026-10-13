@@ -140,7 +140,17 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def home(request):
-    return render(request, 'home.html')
+    from apps.health.models import Assessment
+
+    assessments = Assessment.objects.filter(user=request.user)
+    latest = assessments.first()
+
+    return render(request, 'home.html', {
+        'latest': latest,
+        'assessment_count': assessments.count(),
+        'has_assessment': latest is not None,
+        'record_recent': assessments[:5],
+    })
 
 
 @require_http_methods(['GET', 'POST'])

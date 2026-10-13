@@ -1,26 +1,146 @@
 {% extends "theme/base.html" %}
 {% block content %}
-<div class="container-xl">
-  <div class="page-header d-print-none" aria-label="Page header">
-    <div class="container-xl">
-      <div class="row align-items-center">
-        <div class="col">
-          <div class="page-pretitle">Overview</div>
-          <div class="d-flex align-items-center gap-3 flex-wrap d-none d-md-flex">
-            <h2 class="page-title mb-0">Dashboard</h2>
+<div class="page-header d-print-none" aria-label="Page header">
+  <div class="row align-items-center">
+    <div class="col">
+      <div class="page-pretitle">Health advisory</div>
+      <h2 class="page-title">Welcome back, {{ user.first_name|default:user.username }}</h2>
+      <p class="text-secondary mt-2">Your personal health risk and lifestyle dashboard.</p>
+    </div>
+    <div class="col-auto">
+      <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
+        <i class="fas fa-heart-pulse me-1"></i> New assessment
+      </a>
+    </div>
+  </div>
+</div>
+
+{% if latest %}
+  <div class="row row-cards mb-3">
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="subheader">Latest risk score</div>
+          <div class="h1 mb-0 text-{{ latest.level_colour }}">{{ latest.risk_score }}<span class="fs-4 text-secondary">/100</span></div>
+          <div class="mt-2">
+            <span class="badge bg-{{ latest.level_colour }}">{{ latest.risk_level }} risk</span>
           </div>
-          <h2 class="page-title mb-0 d-md-none">Dashboard</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="subheader">Body mass index</div>
+          <div class="h1 mb-0">{{ latest.bmi|default:"-" }}</div>
+          <div class="text-secondary">{{ latest.bmi_category|default:"Not calculated" }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="subheader">Blood pressure</div>
+          <div class="h1 mb-0">{{ latest.systolic }}/{{ latest.diastolic }}</div>
+          <div class="text-secondary">{{ latest.get_blood_pressure_band_display }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="subheader">Assessments</div>
+          <div class="h1 mb-0">{{ assessment_count }}</div>
+          <a href="{% url 'health:history' %}" class="text-primary">View history</a>
         </div>
       </div>
     </div>
   </div>
-  <br>
 
-  <div class="card">
-    <div class="card-body text-muted">
-      Dashboard
+  <div class="row row-cards">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-spa text-green me-2"></i>Recommended for you
+          </h3>
+          <div class="card-actions">
+            <a href="{% url 'health:report' latest.pk %}" class="btn btn-sm">Full report</a>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if latest.recommendations %}
+            <div class="list-group list-group-flush">
+              {% for rec in latest.recommendations|slice:":5" %}
+                <div class="list-group-item px-0">
+                  <div class="d-flex align-items-start">
+                    <span class="badge bg-green-lt me-3">{{ forloop.counter }}</span>
+                    <div>
+                      <div class="fw-bold">{{ rec.title }}</div>
+                      <div class="text-secondary">{{ rec.advice }}</div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-secondary mb-0">
+              <i class="fas fa-circle-check text-success me-1"></i>
+              No changes needed right now. Your indicators are all within
+              recommended ranges.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Recent assessments</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for record in record_recent %}
+            <div class="list-group-item">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <span class="badge bg-{{ record.level_colour }}">{{ record.risk_score }}</span>
+                </div>
+                <div class="col text-truncate">
+                  <a href="{% url 'health:report' record.pk %}" class="text-reset">{{ record.risk_level }} risk</a>
+                  <div class="d-block text-secondary text-truncate mt-n1">{{ record.created_at|date:"d M Y, H:i" }}</div>
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="list-group-item text-secondary">No assessments yet.</div>
+          {% endfor %}
+        </div>
+        {% if assessment_count > 5 %}
+          <div class="card-footer text-center">
+            <a href="{% url 'health:history' %}" class="btn btn-sm">View all {{ assessment_count }} assessments</a>
+          </div>
+        {% endif %}
+      </div>
     </div>
   </div>
-
-</div>
+{% else %}
+  <div class="card">
+    <div class="card-body">
+      <div class="empty">
+        <div class="empty-icon"><i class="fas fa-heart-pulse"></i></div>
+        <p class="empty-title">Get your first health report</p>
+        <p class="empty-subtitle text-secondary">
+          Complete a short health risk assessment to receive a personalised risk
+          score and lifestyle recommendations.
+        </p>
+        <div class="empty-action">
+          <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
+            Start assessment
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
 {% endblock %}
