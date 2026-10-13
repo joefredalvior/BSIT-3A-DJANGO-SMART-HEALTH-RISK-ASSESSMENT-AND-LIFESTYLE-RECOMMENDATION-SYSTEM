@@ -1,5 +1,3 @@
-import json
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -154,14 +152,8 @@ def history(request):
     latest = records.first()
     stats = records.aggregate(average=Avg('risk_score'))
 
-    trend = [
-        {'score': r.risk_score, 'level': r.risk_level, 'date': r.created_at}
-        for r in list(reversed(records[:12]))
-    ]
-
     return render(request, 'health/history.html', {
         'records': records,
         'latest': latest,
         'average_score': int(round(stats['average'])) if stats['average'] is not None else None,
-        'trend': json.dumps(trend),
     })

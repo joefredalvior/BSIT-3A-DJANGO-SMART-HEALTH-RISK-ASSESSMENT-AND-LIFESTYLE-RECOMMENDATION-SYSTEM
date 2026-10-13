@@ -102,3 +102,40 @@ class AssessmentTests(TestCase):
             self.healthy, smoking_status='current', diet_quality='poor',
         ))
         self.assertEqual(len(result.recommendations), len(result.findings))
+
+
+class HistoryViewTests(TestCase):
+    """Regression: the history page used to 500 once a user had 2+ records.
+
+    The trend payload passed a raw datetime into json.dumps, which raises
+    TypeError. The trend was unused by the template, so it was removed.
+    """
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('histuser', password='pass')
+        self.client.force_login(self.user)
+
+    def _make_assessment(self, **overrides):
+        from apps.health.models import Assessment
+        fields = dict(
+            user=self.user, age=40, sex='male', height_cm=175, weight_kg=80,
+            waist_cm=90, systolic=120, diastolic=80, blood_pressure_band='normal',
+            activity_level='moderate', smoking_status='never',
+            alcohol_status='light', diet_quality='mixed', sleep_hours=7,
+            risk_score=30, risk_level='Moderate', bmi=26.1,
+            bmi_category='Overweight', findings='[]', recommendations='[]',
+        )
+        fields.update(overrides)
+        return Assessment.objects.create(**fields)
+
+    def test_history_renders_with_no_records(self):
+        response = self.client.get('/health/history/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_history_renders_with_multiple_records(self):
+        self._make_assessment()
+        self._make_assessment(risk_score=55, risk_level='High')
+        response = self.client.get('/health/history/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '55')
