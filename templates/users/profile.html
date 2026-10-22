@@ -1,0 +1,151 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Account</div>
+    <h2 class="page-title">My Profile</h2>
+    <p class="dh-page-head-sub">
+      Save your baseline details once, and new health assessments will be prefilled.
+    </p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
+      <i class="fas fa-heart-pulse me-1"></i> Start an assessment
+    </a>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-8">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if errors %}
+        <div class="alert alert-danger" role="alert">
+          <h4 class="alert-title">Please correct the following</h4>
+          <ul class="mb-0">
+            {% for field, message in errors.items %}<li>{{ message }}</li>{% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <section class="dh-section">
+        <div class="dh-section-head">
+          <span class="dh-section-icon"><i class="fas fa-id-card"></i></span>
+          <div>
+            <h3 class="dh-section-title">Personal details</h3>
+            <p class="dh-section-sub">Used to calculate your age and personalise ranges.</p>
+          </div>
+        </div>
+        <div class="dh-section-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="id_birthdate">Date of birth</label>
+              <input type="date" class="form-control {% if errors.birthdate %}is-invalid{% endif %}"
+                     id="id_birthdate" name="birthdate" value="{{ form.birthdate }}">
+              <small class="form-hint">Used to calculate your age for assessments.</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_sex">Sex</label>
+              <select class="form-select {% if errors.sex %}is-invalid{% endif %}" id="id_sex" name="sex">
+                <option value="">Select sex</option>
+                {% for value, label in sex_choices %}
+                  <option value="{{ value }}" {% if form.sex == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dh-section">
+        <div class="dh-section-head">
+          <span class="dh-section-icon"><i class="fas fa-heart-pulse"></i></span>
+          <div>
+            <h3 class="dh-section-title">Health baseline</h3>
+            <p class="dh-section-sub">These details rarely change, so we reuse them for each assessment.</p>
+          </div>
+        </div>
+        <div class="dh-section-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="id_height_cm">Height (cm)</label>
+              <input type="number" class="form-control {% if errors.height_cm %}is-invalid{% endif %}"
+                     id="id_height_cm" name="height_cm" min="100" max="250" value="{{ form.height_cm }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_activity_level">Usual activity level</label>
+              <select class="form-select {% if errors.activity_level %}is-invalid{% endif %}" id="id_activity_level" name="activity_level">
+                <option value="">Select activity level</option>
+                {% for value, label in activity_choices %}
+                  <option value="{{ value }}" {% if form.activity_level == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_family_history">Family history</label>
+              <select class="form-select {% if errors.family_history %}is-invalid{% endif %}" id="id_family_history" name="family_history">
+                {% for value, label in family_history_choices %}
+                  <option value="{{ value }}" {% if form.family_history == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_conditions">Existing conditions</label>
+              <select class="form-select {% if errors.conditions %}is-invalid{% endif %}" id="id_conditions" name="conditions">
+                {% for value, label in condition_choices %}
+                  <option value="{{ value }}" {% if form.conditions == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="dh-form-footer">
+        <p class="text-secondary m-0 me-auto small">
+          {% if age %}Current age: <strong>{{ age }}</strong>{% else %}Add a birthdate to calculate your age.{% endif %}
+        </p>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i> Save profile
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric mb-3">
+          <span class="dh-avatar" style="width:3rem;height:3rem;font-size:1rem;">{{ user.username|first|upper }}</span>
+          <div>
+            <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+            <div class="text-secondary small">
+              {% if user.is_superuser %}Administrator{% elif user.is_staff %}Clinician{% else %}Patient{% endif %}
+            </div>
+          </div>
+        </div>
+        <h3 class="card-title">Why this helps</h3>
+        <p class="text-secondary small">
+          Your profile stores details that rarely change. Each new assessment
+          starts with these values already filled in, so you only need to update
+          your weight, blood pressure and lifestyle answers.
+        </p>
+        <div class="dh-list-row">
+          <span class="dh-list-dot bg-blue-lt text-blue"><i class="fas fa-clock"></i></span>
+          <div class="small">Saves time on every assessment</div>
+        </div>
+        <div class="dh-list-row">
+          <span class="dh-list-dot bg-green-lt text-green"><i class="fas fa-bullseye"></i></span>
+          <div class="small">Improves the accuracy of your targets</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a href="{% url 'health:assessment_form' %}" class="btn btn-primary w-100">
+          <i class="fas fa-heart-pulse me-1"></i> Start an assessment
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

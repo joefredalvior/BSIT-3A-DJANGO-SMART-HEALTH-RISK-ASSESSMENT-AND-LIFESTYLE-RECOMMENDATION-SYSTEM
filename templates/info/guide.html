@@ -1,0 +1,54 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Health information</div>
+    <h2 class="page-title">Health Risk Guide</h2>
+    <p class="dh-page-head-sub">
+      Reference ranges used by the assessment engine, explained in plain language.
+    </p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
+      <i class="fas fa-heart-pulse me-1"></i> Start an assessment
+    </a>
+  </div>
+</div>
+
+<div class="row row-cards">
+  {% for section in sections %}
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">{{ section.title }}</h3>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary">{{ section.summary }}</p>
+          <table class="table table-sm table-vcenter">
+            <tbody>
+              {% for range, meaning in section.bands %}
+                <tr>
+                  <td class="fw-medium">{{ range }}</td>
+                  <td class="text-secondary">{{ meaning }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+
+  <div class="col-12">
+    <div class="alert alert-info" role="alert">
+      <div class="d-flex">
+        <div class="text-secondary"><i class="fas fa-info-circle fa-lg"></i></div>
+        <div>
+          <h4 class="alert-title">Important</h4>
+          <div class="text-secondary">{{ disclaimer }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

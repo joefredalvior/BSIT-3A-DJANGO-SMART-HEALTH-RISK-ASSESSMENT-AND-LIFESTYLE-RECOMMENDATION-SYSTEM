@@ -1,0 +1,146 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Clinical overview</div>
+    <h2 class="page-title">Patient Assessments</h2>
+    <p class="dh-page-head-sub">Every assessment submitted across all users.</p>
+  </div>
+</div>
+
+<div class="row row-cards mb-3">
+  <div class="col-sm-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric">
+          <span class="dh-metric-icon primary"><i class="fas fa-clipboard-check"></i></span>
+          <div>
+            <div class="dh-metric-value">{{ total }}</div>
+            <div class="dh-metric-label">Assessments</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric">
+          <span class="dh-metric-icon info"><i class="fas fa-chart-simple"></i></span>
+          <div>
+            <div class="dh-metric-value">{{ average_score|default:"-" }}</div>
+            <div class="dh-metric-label">Average risk score</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric">
+          <span class="dh-metric-icon danger"><i class="fas fa-triangle-exclamation"></i></span>
+          <div>
+            <div class="dh-metric-value text-danger">{{ high_risk_count }}</div>
+            <div class="dh-metric-label">High or critical</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">All patient reports</h3>
+    <div class="card-actions">
+      <form method="get" class="d-flex gap-2">
+        <div class="input-group" style="max-width: 340px;">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" name="q" value="{{ query }}" class="form-control"
+                 placeholder="Search patient by name or username...">
+          {% if query %}<a href="{% url 'users:clinician' %}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+          <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Patient</th>
+          <th>Date</th>
+          <th>Score</th>
+          <th>Risk level</th>
+          <th>BMI</th>
+          <th>Blood pressure</th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in assessments %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar avatar-sm bg-blue-lt">{{ record.user.username|first|upper }}</span>
+                <div>
+                  <div class="fw-medium">{{ record.user.get_full_name|default:record.user.username }}</div>
+                  <div class="text-secondary small">{{ record.user.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="text-secondary">{{ record.created_at|date:"d M Y, H:i" }}</td>
+            <td class="fw-bold">{{ record.risk_score }}</td>
+            <td><span class="badge bg-{{ record.level_colour }}">{{ record.risk_level }}</span></td>
+            <td>{{ record.bmi|default:"-" }}</td>
+            <td>{{ record.systolic }}/{{ record.diastolic }}</td>
+            <td>
+              <div class="btn-list flex-nowrap">
+                <a href="{% url 'health:clinician_report' record.pk %}" class="btn btn-sm">View report</a>
+                <a href="{% url 'health:export' record.pk %}" class="btn btn-sm btn-ghost-secondary" title="Export">
+                  <i class="fas fa-file-excel"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="empty py-5">
+                <div class="empty-icon"><i class="fas fa-users fa-2x text-muted"></i></div>
+                <p class="empty-title">No assessments found</p>
+                <p class="empty-subtitle">Try adjusting your search.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if assessments.paginator.num_pages > 1 %}
+    <div class="card-footer d-flex align-items-center">
+      <p class="m-0 text-secondary">
+        Showing {{ assessments.start_index }} to {{ assessments.end_index }} of {{ assessments.paginator.count }}
+      </p>
+      <ul class="pagination m-0 ms-auto">
+        {% if assessments.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ assessments.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">prev</a>
+          </li>
+        {% endif %}
+        {% for num in assessments.paginator.page_range %}
+          <li class="page-item {% if assessments.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+          </li>
+        {% endfor %}
+        {% if assessments.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ assessments.next_page_number }}{% if query %}&q={{ query }}{% endif %}">next</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

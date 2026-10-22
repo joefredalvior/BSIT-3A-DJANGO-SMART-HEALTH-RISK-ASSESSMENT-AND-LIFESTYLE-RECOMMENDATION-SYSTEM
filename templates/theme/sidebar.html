@@ -59,23 +59,57 @@
           </a>
         </li>
 
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'users' %}active{% endif %}" href="{% url 'users:user_list' %}">
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'users' and request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'users:profile' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-users"></i>
+              <i class="nav-icon fas fa-user-circle"></i>
             </span>
-            <span class="nav-link-title">Users</span>
+            <span class="nav-link-title">My Profile</span>
           </a>
         </li>
 
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'info' and request.resolver_match.url_name == 'guide' %}active{% endif %}" href="{% url 'info:guide' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-book-medical"></i>
+            </span>
+            <span class="nav-link-title">Health Guide</span>
+          </a>
+        </li>
+
+        {% if user.is_staff or user.is_superuser %}
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'users' and request.resolver_match.url_name == 'clinician' %}active{% endif %}" href="{% url 'users:clinician' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-stethoscope"></i>
+            </span>
+            <span class="nav-link-title">Patient Assessments</span>
+          </a>
+        </li>
+        {% endif %}
+
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'info' %}active{% endif %}" href="{% url 'info:info_list' %}">
+          <a class="nav-link {% if request.resolver_match.app_name == 'info' and request.resolver_match.url_name == 'info_list' %}active{% endif %}" href="{% url 'info:info_list' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="nav-icon fas fa-address-card"></i>
             </span>
-            <span class="nav-link-title">Info</span>
+            <span class="nav-link-title">My Information</span>
           </a>
         </li>
+
+        {% if user.is_superuser %}
+        <li class="nav-item">
+          <span class="dh-nav-section">Administration</span>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'users' and request.resolver_match.url_name == 'user_list' %}active{% endif %}" href="{% url 'users:user_list' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-users"></i>
+            </span>
+            <span class="nav-link-title">User Management</span>
+          </a>
+        </li>
+        {% endif %}
 
         {% if user.is_authenticated %}
         <li class="nav-item d-lg-none">
@@ -90,12 +124,12 @@
 
         <li class="nav-item mt-auto dh-nav-sidebar-footer">
           <div class="dh-user-card">
-            <a href="{% url 'users:user_list' %}" class="d-flex align-items-center gap-2 text-decoration-none text-white min-w-0 w-100">
+            <a href="{% url 'users:profile' %}" class="d-flex align-items-center gap-2 text-decoration-none text-white min-w-0 w-100">
               <span class="dh-avatar">{{ user.username|first|upper }}</span>
               <span class="min-w-0 flex-grow-1">
                 <span class="dh-user-name">{{ user.username }}</span>
                 <span class="dh-user-role">
-                  {% if user.is_superuser %}Administrator{% elif user.is_authenticated %}Instructor{% endif %}
+                  {% if user.is_superuser %}Administrator{% elif user.is_staff %}Clinician{% else %}Patient{% endif %}
                 </span>
               </span>
             </a>

@@ -7,7 +7,7 @@
     <title>
       HealthWise - Health Risk Assessment &amp; Lifestyle Advisory
     </title>
-    <link rel="icon" href="./favicon-dev.ico" type="image/x-icon"/>
+    <link rel="icon" href="{% static 'favicon-dev.ico' %}" type="image/x-icon"/>
 
     <link href="{% static 'css/tabler.css' %}" rel="stylesheet"/>
     <link href="{% static 'css/tabler-flags.css' %}" rel="stylesheet"/>
@@ -30,6 +30,25 @@
       <div class="page-wrapper">
         <div class="page-body">
           <div class="container-xl">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible mb-3" role="alert">
+                  <div class="d-flex">
+                    <div class="me-2">
+                      {% if message.tags == 'success' %}
+                        <i class="fas fa-circle-check"></i>
+                      {% elif message.tags == 'error' or message.tags == 'warning' %}
+                        <i class="fas fa-triangle-exclamation"></i>
+                      {% else %}
+                        <i class="fas fa-circle-info"></i>
+                      {% endif %}
+                    </div>
+                    <div>{{ message }}</div>
+                  </div>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
             {% block content %}
             {% endblock %}
           </div>

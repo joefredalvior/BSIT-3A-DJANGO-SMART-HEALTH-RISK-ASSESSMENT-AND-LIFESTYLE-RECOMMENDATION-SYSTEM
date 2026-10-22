@@ -1,15 +1,27 @@
-from django.shortcuts import render, get_object_or_404
+from datetime import date
+
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.db.models import Q
+from django.db.models import Avg, Q
+
+from apps.health import engine
+from apps.health.models import Assessment
+
+from .models import UserProfile
 
 
 def _is_superuser(user):
     return user.is_superuser
+
+
+def _is_clinician(user):
+    return user.is_staff or user.is_superuser
 
 
 # PAGE
@@ -148,3 +160,105 @@ def user_delete_ajax(request, pk):
         return JsonResponse({"error": "You cannot delete yourself"}, status=400)
     user.delete()
     return JsonResponse({"status": "deleted"})
+# PROFILE
+@login_required(login_url='login')
+@require_http_methods(['GET', 'POST'])
+def profile_view(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    errors = {}
+    form = {
+        'birthdate': request.POST.get('birthdate', '') if request.method == 'POST' else (
+            profile.birthdate.isoformat() if profile.birthdate else ''
+        ),
+        'sex': request.POST.get('sex', '') if request.method == 'POST' else profile.sex,
+        'height_cm': request.POST.get('height_cm', '') if request.method == 'POST' else (
+            profile.height_cm or ''
+        ),
+        'activity_level': request.POST.get('activity_level', '') if request.method == 'POST' else profile.activity_level,
+        'family_history': request.POST.get('family_history', '') if request.method == 'POST' else profile.family_history,
+        'conditions': request.POST.get('conditions', '') if request.method == 'POST' else profile.conditions,
+    }
+
+    if request.method == 'POST':
+        birthdate_raw = str(form['birthdate']).strip()
+        birthdate_value = None
+        if birthdate_raw:
+            try:
+                birthdate_value = date.fromisoformat(birthdate_raw)
+            except ValueError:
+                errors['birthdate'] = 'Enter a valid date (YYYY-MM-DD).'
+        form['birthdate'] = birthdate_raw
+
+        height_raw = str(form['height_cm']).strip()
+        if height_raw:
+            try:
+                height = int(float(height_raw))
+            except ValueError:
+                errors['height_cm'] = 'Enter a whole number of centimetres.'
+            else:
+                if height < 100 or height > 250:
+                    errors['height_cm'] = 'Enter a height between 100 and 250 cm.'
+                else:
+                    form['height_cm'] = height
+        else:
+            form['height_cm'] = None
+
+        if form['sex'] and form['sex'] not in dict(engine.SEX_CHOICES):
+            errors['sex'] = 'Please select a valid option.'
+        if form['activity_level'] and form['activity_level'] not in dict(engine.ACTIVITY_LEVELS):
+            errors['activity_level'] = 'Please select a valid option.'
+        if form['family_history'] not in dict(engine.FAMILY_HISTORY_CHOICES):
+            errors['family_history'] = 'Please select a valid option.'
+        if form['conditions'] not in dict(engine.CONDITION_CHOICES):
+            errors['conditions'] = 'Please select a valid option.'
+
+        if not errors:
+            profile.birthdate = birthdate_value
+            profile.sex = form['sex']
+            profile.height_cm = form['height_cm']
+            profile.activity_level = form['activity_level']
+            profile.family_history = form['family_history']
+            profile.conditions = form['conditions']
+            profile.save()
+            messages.success(request, 'Profile saved. New assessments will be prefilled.')
+            return redirect('users:profile')
+
+    return render(request, 'users/profile.html', {
+        'profile': profile,
+        'form': form,
+        'errors': errors,
+        'age': profile.age,
+        'sex_choices': engine.SEX_CHOICES,
+        'activity_choices': engine.ACTIVITY_LEVELS,
+        'family_history_choices': engine.FAMILY_HISTORY_CHOICES,
+        'condition_choices': engine.CONDITION_CHOICES,
+    })
+
+
+# CLINICIAN DASHBOARD
+@login_required(login_url='login')
+@user_passes_test(_is_clinician, login_url='dashboard')
+def clinician_dashboard(request):
+    query = request.GET.get('q', '').strip()
+    assessments = Assessment.objects.select_related('user').all()
+
+    if query:
+        assessments = assessments.filter(
+            Q(user__username__icontains=query) |
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query)
+        )
+
+    stats = assessments.aggregate(average=Avg('risk_score'))
+    high_risk_count = assessments.filter(risk_level__in=['High', 'Critical']).count()
+
+    paginator = Paginator(assessments, 20)
+    page = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'users/clinician.html', {
+        'assessments': page,
+        'query': query,
+        'total': assessments.count(),
+        'average_score': int(round(stats['average'])) if stats['average'] is not None else None,
+        'high_risk_count': high_risk_count,
+    })

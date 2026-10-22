@@ -1,22 +1,35 @@
 {% extends "theme/base.html" %}
 {% block content %}
-<div class="page-header d-print-none" aria-label="Page header">
-  <div class="row align-items-center">
-    <div class="col">
-      <div class="page-pretitle">Health advisory</div>
-      <h2 class="page-title">Health Risk Assessment</h2>
-      <p class="text-secondary mt-2">
-        Answer the questions below to receive a personalised health risk score
-        and lifestyle recommendations.
-      </p>
-    </div>
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Health advisory</div>
+    <h2 class="page-title">Health Risk Assessment</h2>
+    <p class="dh-page-head-sub">
+      Answer the questions below to receive a personalised health risk score and
+      lifestyle recommendations. It takes about two minutes.
+    </p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'health:history' %}" class="btn">
+      <i class="fas fa-clock-rotate-left me-1"></i> History
+    </a>
+    <a href="{% url 'info:guide' %}" class="btn">
+      <i class="fas fa-book-medical me-1"></i> Health guide
+    </a>
   </div>
 </div>
 
 <div class="row row-cards">
-  <div class="col-12">
+  <div class="col-lg-8">
     <form method="post" action="" novalidate>
       {% csrf_token %}
+
+      <div class="dh-form-steps">
+        <span class="dh-form-step active"><span>1</span>About you</span>
+        <span class="dh-form-step"><span>2</span>Vitals</span>
+        <span class="dh-form-step"><span>3</span>Lifestyle</span>
+        <span class="dh-form-step"><span>4</span>History</span>
+      </div>
 
       {% if errors %}
         <div class="alert alert-danger" role="alert">
@@ -30,11 +43,15 @@
       {% endif %}
 
       <!-- About you -->
-      <div class="card mb-3">
-        <div class="card-header">
-          <h3 class="card-title">About you</h3>
+      <section class="dh-section">
+        <div class="dh-section-head">
+          <span class="dh-section-icon"><i class="fas fa-user"></i></span>
+          <div>
+            <h3 class="dh-section-title">About you</h3>
+            <p class="dh-section-sub">Basic body measurements used to calculate BMI and waist ratio.</p>
+          </div>
         </div>
-        <div class="card-body">
+        <div class="dh-section-body">
           <div class="row g-3">
             <div class="col-md-4">
               <label class="form-label required" for="id_age">Age</label>
@@ -72,14 +89,18 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Measurements -->
-      <div class="card mb-3">
-        <div class="card-header">
-          <h3 class="card-title">Measurements</h3>
+      <section class="dh-section">
+        <div class="dh-section-head">
+          <span class="dh-section-icon"><i class="fas fa-heart-pulse"></i></span>
+          <div>
+            <h3 class="dh-section-title">Vital measurements</h3>
+            <p class="dh-section-sub">Use your most recent resting readings.</p>
+          </div>
         </div>
-        <div class="card-body">
+        <div class="dh-section-body">
           <div class="row g-3">
             <div class="col-md-4">
               <label class="form-label required" for="id_systolic">Systolic (top number)</label>
@@ -101,14 +122,18 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Lifestyle -->
-      <div class="card mb-3">
-        <div class="card-header">
-          <h3 class="card-title">Lifestyle</h3>
+      <section class="dh-section">
+        <div class="dh-section-head">
+          <span class="dh-section-icon"><i class="fas fa-person-running"></i></span>
+          <div>
+            <h3 class="dh-section-title">Lifestyle</h3>
+            <p class="dh-section-sub">Think about a typical week, not your best week.</p>
+          </div>
         </div>
-        <div class="card-body">
+        <div class="dh-section-body">
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label required" for="id_activity_level">Physical activity</label>
@@ -148,19 +173,98 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="card-footer d-flex align-items-center">
-        <p class="text-secondary m-0 me-auto">
-          <i class="fas fa-info-circle me-1"></i>
+      <!-- Medical history & wellbeing -->
+      <section class="dh-section">
+        <div class="dh-section-head">
+          <span class="dh-section-icon"><i class="fas fa-notes-medical"></i></span>
+          <div>
+            <h3 class="dh-section-title">Medical history &amp; wellbeing</h3>
+            <p class="dh-section-sub">These factors help us personalise your recommendations.</p>
+          </div>
+        </div>
+        <div class="dh-section-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label required" for="id_family_history">Family history</label>
+              <select class="form-select {% if errors.family_history %}is-invalid{% endif %}" id="id_family_history" name="family_history" required>
+                {% for value, label in family_history_choices %}
+                  <option value="{{ value }}" {% if form.family_history == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required" for="id_conditions">Existing conditions</label>
+              <select class="form-select {% if errors.conditions %}is-invalid{% endif %}" id="id_conditions" name="conditions" required>
+                {% for value, label in condition_choices %}
+                  <option value="{{ value }}" {% if form.conditions == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required" for="id_stress_level">Stress level</label>
+              <select class="form-select {% if errors.stress_level %}is-invalid{% endif %}" id="id_stress_level" name="stress_level" required>
+                {% for value, label in stress_choices %}
+                  <option value="{{ value }}" {% if form.stress_level == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required" for="id_fruit_veg_servings">Fruit &amp; vegetable servings per day</label>
+              <input type="number" step="1" class="form-control {% if errors.fruit_veg_servings %}is-invalid{% endif %}"
+                     id="id_fruit_veg_servings" name="fruit_veg_servings"
+                     min="{{ limits.fruit_veg_servings.0 }}" max="{{ limits.fruit_veg_servings.1 }}"
+                     value="{{ form.fruit_veg_servings|default:'5' }}" required>
+              <small class="form-hint">One serving is roughly a handful or one medium fruit.</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="dh-form-footer">
+        <p class="text-secondary m-0 me-auto small">
+          <i class="fas fa-shield-heart me-1"></i>
           This tool provides general guidance and is not a medical diagnosis.
         </p>
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn btn-primary btn-lg">
           <i class="fas fa-heart-pulse me-1"></i> Get my health report
         </button>
       </div>
     </form>
   </div>
-</div>
+
+  <div class="col-lg-4">
+    <div class="card sticky-top" style="top: 1rem;">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-list-check text-primary me-2"></i>Before you start
+        </h3>
+      </div>
+      <div class="card-body">
+        <p class="text-secondary small">
+          Have these ready for the most accurate result:
+        </p>
+        <div class="dh-list-row">
+          <span class="dh-list-dot bg-blue-lt text-blue"><i class="fas fa-weight-scale"></i></span>
+          <div class="small">Your current weight and height</div>
+        </div>
+        <div class="dh-list-row">
+          <span class="dh-list-dot bg-red-lt text-red"><i class="fas fa-droplet"></i></span>
+          <div class="small">A recent resting blood pressure reading</div>
+        </div>
+        <div class="dh-list-row">
+          <span class="dh-list-dot bg-green-lt text-green"><i class="fas fa-ruler"></i></span>
+          <div class="small">Waist measurement at the navel</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="d-flex align-items-start gap-2 small text-secondary">
+          <i class="fas fa-lock text-primary mt-1"></i>
+          <span>Your answers are private and only visible to your account.</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

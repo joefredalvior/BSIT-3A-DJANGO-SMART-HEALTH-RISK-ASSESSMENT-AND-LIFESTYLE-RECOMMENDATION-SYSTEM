@@ -1,57 +1,109 @@
 {% extends "theme/base.html" %}
 {% block content %}
-<div class="page-header d-print-none" aria-label="Page header">
-  <div class="row align-items-center">
-    <div class="col">
-      <div class="page-pretitle">Health advisory</div>
-      <h2 class="page-title">Welcome back, {{ user.first_name|default:user.username }}</h2>
-      <p class="text-secondary mt-2">Your personal health risk and lifestyle dashboard.</p>
-    </div>
-    <div class="col-auto">
-      <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
-        <i class="fas fa-heart-pulse me-1"></i> New assessment
-      </a>
+<div class="dh-hero mb-3">
+  <div class="dh-hero-inner">
+    <div class="row align-items-center g-3">
+      <div class="col-lg-8">
+        <div class="dh-hero-pretitle">Your health dashboard</div>
+        <h1 class="dh-hero-title">Welcome back, {{ user.first_name|default:user.username }}</h1>
+        {% if latest %}
+          <p class="dh-hero-sub mb-0">
+            Your latest assessment scored <strong>{{ latest.risk_score }}/100</strong>
+            ({{ latest.risk_level|lower }} risk) on {{ latest.created_at|date:"d M Y" }}.
+            Keep going — small habits add up.
+          </p>
+          <div class="dh-hero-badges">
+            <span class="dh-hero-badge">
+              <i class="fas fa-heart-pulse"></i> {{ latest.bmi_category|default:"BMI not calculated" }}
+            </span>
+            <span class="dh-hero-badge">
+              <i class="fas fa-gauge-high"></i> {{ latest.get_blood_pressure_band_display }}
+            </span>
+            <span class="dh-hero-badge">
+              <i class="fas fa-clock-rotate-left"></i> {{ assessment_count }} assessment{{ assessment_count|pluralize }}
+            </span>
+          </div>
+        {% else %}
+          <p class="dh-hero-sub mb-0">
+            Complete your first health risk assessment to receive a personalised
+            risk score and lifestyle recommendations.
+          </p>
+        {% endif %}
+        <div class="dh-hero-actions">
+          <a href="{% url 'health:assessment_form' %}" class="btn btn-accent">
+            <i class="fas fa-heart-pulse me-2"></i>Start an assessment
+          </a>
+          {% if latest %}
+            <a href="{% url 'health:report' latest.pk %}" class="btn btn-outline-light">
+              <i class="fas fa-file-medical me-2"></i>View full report
+            </a>
+          {% endif %}
+          <a href="{% url 'info:guide' %}" class="btn btn-outline-light">
+            <i class="fas fa-book-medical me-2"></i>Health guide
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-4 d-none d-lg-block text-end">
+        <div class="display-3 fw-bold lh-1" style="opacity: .9;">{{ latest.risk_score|default:"—" }}<span class="fs-3" style="opacity:.6;">/100</span></div>
+        <div class="dh-hero-pretitle mt-2">Latest risk score</div>
+      </div>
     </div>
   </div>
 </div>
 
 {% if latest %}
   <div class="row row-cards mb-3">
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6 col-xl-3">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Latest risk score</div>
-          <div class="h1 mb-0 text-{{ latest.level_colour }}">{{ latest.risk_score }}<span class="fs-4 text-secondary">/100</span></div>
-          <div class="mt-2">
-            <span class="badge bg-{{ latest.level_colour }}">{{ latest.risk_level }} risk</span>
+          <div class="dh-metric">
+            <span class="dh-metric-icon {{ latest.level_colour|default:'primary' }}">
+              <i class="fas fa-shield-heart"></i>
+            </span>
+            <div>
+              <div class="dh-metric-value text-{{ latest.level_colour }}">{{ latest.risk_score }}</div>
+              <div class="dh-metric-label">{{ latest.risk_level }} risk</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6 col-xl-3">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Body mass index</div>
-          <div class="h1 mb-0">{{ latest.bmi|default:"-" }}</div>
-          <div class="text-secondary">{{ latest.bmi_category|default:"Not calculated" }}</div>
+          <div class="dh-metric">
+            <span class="dh-metric-icon info"><i class="fas fa-weight-scale"></i></span>
+            <div>
+              <div class="dh-metric-value">{{ latest.bmi|default:"-" }}</div>
+              <div class="dh-metric-label">{{ latest.bmi_category|default:"BMI" }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6 col-xl-3">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Blood pressure</div>
-          <div class="h1 mb-0">{{ latest.systolic }}/{{ latest.diastolic }}</div>
-          <div class="text-secondary">{{ latest.get_blood_pressure_band_display }}</div>
+          <div class="dh-metric">
+            <span class="dh-metric-icon warning"><i class="fas fa-droplet"></i></span>
+            <div>
+              <div class="dh-metric-value">{{ latest.systolic }}/{{ latest.diastolic }}</div>
+              <div class="dh-metric-label">Blood pressure</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6 col-xl-3">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Assessments</div>
-          <div class="h1 mb-0">{{ assessment_count }}</div>
-          <a href="{% url 'health:history' %}" class="text-primary">View history</a>
+          <div class="dh-metric">
+            <span class="dh-metric-icon success"><i class="fas fa-clipboard-check"></i></span>
+            <div>
+              <div class="dh-metric-value">{{ assessment_count }}</div>
+              <div class="dh-metric-label">Assessments</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -59,7 +111,7 @@
 
   <div class="row row-cards">
     <div class="col-lg-7">
-      <div class="card">
+      <div class="card h-100">
         <div class="card-header">
           <h3 class="card-title">
             <i class="fas fa-spa text-green me-2"></i>Recommended for you
@@ -69,75 +121,153 @@
           </div>
         </div>
         <div class="card-body">
-          {% if latest.recommendations %}
-            <div class="list-group list-group-flush">
-              {% for rec in latest.recommendations|slice:":5" %}
-                <div class="list-group-item px-0">
-                  <div class="d-flex align-items-start">
-                    <span class="badge bg-green-lt me-3">{{ forloop.counter }}</span>
-                    <div>
-                      <div class="fw-bold">{{ rec.title }}</div>
-                      <div class="text-secondary">{{ rec.advice }}</div>
-                    </div>
+          {% if latest.recommendation_list %}
+            {% for rec in latest.recommendation_list|slice:":4" %}
+              <div class="dh-list-row">
+                <span class="dh-list-dot bg-green-lt text-success">{{ forloop.counter }}</span>
+                <div class="flex-grow-1">
+                  <div class="fw-bold">{{ rec.title }}</div>
+                  <div class="text-secondary small">{{ rec.advice }}</div>
+                  <div class="small text-secondary mt-1">
+                    <i class="fas fa-bullseye me-1"></i>Target: {{ rec.target }}
                   </div>
                 </div>
-              {% endfor %}
-            </div>
+                <span class="badge bg-green-lt">-{{ rec.points_saved }}</span>
+              </div>
+            {% endfor %}
           {% else %}
-            <p class="text-secondary mb-0">
-              <i class="fas fa-circle-check text-success me-1"></i>
-              No changes needed right now. Your indicators are all within
-              recommended ranges.
-            </p>
+            <div class="empty py-4">
+              <div class="empty-icon text-success"><i class="fas fa-circle-check fa-2x"></i></div>
+              <p class="empty-title">No changes needed right now</p>
+              <p class="empty-subtitle text-secondary">
+                Your indicators are all within recommended ranges. Keep up your current habits.
+              </p>
+            </div>
           {% endif %}
         </div>
       </div>
     </div>
 
     <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">Your targets</h3>
+          <div class="card-actions text-secondary small">Latest assessment</div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <tbody>
+              {% for target in latest.target_list %}
+                <tr>
+                  <td class="fw-medium">{{ target.label }}</td>
+                  <td class="text-secondary">{{ target.current }}</td>
+                  <td class="text-end">
+                    <span class="badge bg-{% if target.status == 'good' %}success{% else %}warning{% endif %}-lt report-target-badge">
+                      {% if target.status == 'good' %}On target{% else %}Needs work{% endif %}
+                    </span>
+                    <div class="text-secondary small">{{ target.target }}</div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td class="text-secondary">No targets available yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Recent assessments</h3>
-        </div>
-        <div class="list-group list-group-flush">
-          {% for record in record_recent %}
-            <div class="list-group-item">
-              <div class="row align-items-center">
-                <div class="col-auto">
-                  <span class="badge bg-{{ record.level_colour }}">{{ record.risk_score }}</span>
-                </div>
-                <div class="col text-truncate">
-                  <a href="{% url 'health:report' record.pk %}" class="text-reset">{{ record.risk_level }} risk</a>
-                  <div class="d-block text-secondary text-truncate mt-n1">{{ record.created_at|date:"d M Y, H:i" }}</div>
-                </div>
-              </div>
-            </div>
-          {% empty %}
-            <div class="list-group-item text-secondary">No assessments yet.</div>
-          {% endfor %}
-        </div>
-        {% if assessment_count > 5 %}
-          <div class="card-footer text-center">
-            <a href="{% url 'health:history' %}" class="btn btn-sm">View all {{ assessment_count }} assessments</a>
+          <div class="card-actions">
+            <a href="{% url 'health:history' %}" class="btn btn-sm">View all</a>
           </div>
-        {% endif %}
+        </div>
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Score</th>
+                <th>Risk level</th>
+                <th>BMI</th>
+                <th>Blood pressure</th>
+                <th class="w-1"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in record_recent %}
+                <tr>
+                  <td class="text-secondary">{{ record.created_at|date:"d M Y, H:i" }}</td>
+                  <td class="fw-bold">{{ record.risk_score }}</td>
+                  <td><span class="badge bg-{{ record.level_colour }}">{{ record.risk_level }}</span></td>
+                  <td>{{ record.bmi|default:"-" }}</td>
+                  <td>{{ record.systolic }}/{{ record.diastolic }}</td>
+                  <td>
+                    <a href="{% url 'health:report' record.pk %}" class="btn btn-sm">View report</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 {% else %}
-  <div class="card">
-    <div class="card-body">
-      <div class="empty">
-        <div class="empty-icon"><i class="fas fa-heart-pulse"></i></div>
-        <p class="empty-title">Get your first health report</p>
-        <p class="empty-subtitle text-secondary">
-          Complete a short health risk assessment to receive a personalised risk
-          score and lifestyle recommendations.
-        </p>
-        <div class="empty-action">
-          <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
-            Start assessment
-          </a>
+  <div class="row row-cards">
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <span class="dh-metric-icon primary mb-3"><i class="fas fa-heart-pulse"></i></span>
+          <h3 class="card-title">1. Complete an assessment</h3>
+          <p class="text-secondary mb-0">
+            Answer a few questions about your measurements and lifestyle. It takes
+            about two minutes.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <span class="dh-metric-icon success mb-3"><i class="fas fa-gauge-high"></i></span>
+          <h3 class="card-title">2. Get your risk score</h3>
+          <p class="text-secondary mb-0">
+            See a transparent 0–100 score and exactly which factors contribute to it.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <span class="dh-metric-icon warning mb-3"><i class="fas fa-spa"></i></span>
+          <h3 class="card-title">3. Follow your plan</h3>
+          <p class="text-secondary mb-0">
+            Receive prioritised recommendations with realistic, measurable targets.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <div class="empty py-2">
+            <div class="empty-icon"><i class="fas fa-heart-pulse fa-3x"></i></div>
+            <p class="empty-title">Get your first health report</p>
+            <p class="empty-subtitle text-secondary">
+              Complete a short health risk assessment to receive a personalised risk
+              score and lifestyle recommendations.
+            </p>
+            <div class="empty-action">
+              <a href="{% url 'health:assessment_form' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-heart-pulse me-2"></i>Start assessment
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

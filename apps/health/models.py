@@ -26,6 +26,9 @@ class Assessment(models.Model):
     DIET_CHOICES = engine.DIET_QUALITY
     SEX_CHOICES = engine.SEX_CHOICES
     BP_BAND_CHOICES = engine.BLOOD_PRESSURE_BANDS
+    FAMILY_HISTORY_CHOICES = engine.FAMILY_HISTORY_CHOICES
+    CONDITION_CHOICES = engine.CONDITION_CHOICES
+    STRESS_CHOICES = engine.STRESS_CHOICES
 
     # --- inputs ---
     user = models.ForeignKey(
@@ -46,14 +49,25 @@ class Assessment(models.Model):
     alcohol_status = models.CharField(max_length=15, choices=ALCOHOL_CHOICES)
     diet_quality = models.CharField(max_length=10, choices=DIET_CHOICES)
     sleep_hours = models.DecimalField(max_digits=3, decimal_places=1, validators=[MinValueValidator(0), MaxValueValidator(16)])
+    family_history = models.CharField(max_length=10, choices=FAMILY_HISTORY_CHOICES, default='none')
+    conditions = models.CharField(max_length=15, choices=CONDITION_CHOICES, default='none')
+    stress_level = models.CharField(max_length=10, choices=STRESS_CHOICES, default='low')
+    fruit_veg_servings = models.PositiveSmallIntegerField(
+        default=5, validators=[MinValueValidator(0), MaxValueValidator(15)],
+    )
 
     # --- outputs ---
+    engine_version = models.CharField(max_length=10, default=engine.ENGINE_VERSION)
     risk_score = models.PositiveSmallIntegerField(default=0)
     risk_level = models.CharField(max_length=10, choices=LEVEL_CHOICES, default=LOW)
     bmi = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
     bmi_category = models.CharField(max_length=30, blank=True)
+    whtr = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    whtr_category = models.CharField(max_length=30, blank=True)
+    age_factor = models.DecimalField(max_digits=4, decimal_places=2, default=1.0)
     findings = models.JSONField(default=list)
     recommendations = models.JSONField(default=list)
+    targets = models.JSONField(default=list)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -65,6 +79,9 @@ class Assessment(models.Model):
     def __str__(self):
         return f'{self.user.username} - {self.risk_level} ({self.risk_score}) on {self.created_at:%Y-%m-%d}'
 
+    def _as_list(self, value):
+        return value if isinstance(value, list) else []
+
     @property
     def level_colour(self):
         return engine.LEVEL_COLOURS.get(self.risk_level, 'secondary')
@@ -72,3 +89,19 @@ class Assessment(models.Model):
     @property
     def summary(self):
         return engine.LEVEL_SUMMARY.get(self.risk_level, '')
+
+    @property
+    def finding_list(self):
+        return self._as_list(self.findings)
+
+    @property
+    def recommendation_list(self):
+        return self._as_list(self.recommendations)
+
+    @property
+    def top_recommendations(self):
+        return self.recommendation_list[:3]
+
+    @property
+    def target_list(self):
+        return self._as_list(self.targets)

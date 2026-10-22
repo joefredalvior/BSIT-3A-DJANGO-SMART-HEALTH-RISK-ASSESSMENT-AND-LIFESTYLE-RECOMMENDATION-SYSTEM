@@ -1,48 +1,83 @@
 {% extends "theme/base.html" %}
+{% load static %}
 {% block content %}
-<div class="page-header d-print-none" aria-label="Page header">
-  <div class="row align-items-center">
-    <div class="col">
-      <div class="page-pretitle">Health advisory report</div>
-      <h2 class="page-title">Your Health Risk Report</h2>
-      <p class="text-secondary mt-2">
-        Completed on {{ record.created_at|date:"d M Y, H:i" }}
-      </p>
-    </div>
-    <div class="col-auto">
+<div class="dh-page-head d-print-none">
+  <div>
+    <div class="page-pretitle">Health advisory report</div>
+    <h2 class="page-title">Your Health Risk Report</h2>
+    <p class="dh-page-head-sub">
+      {% if clinician_view %}
+        Patient: <strong>{{ record.user.get_full_name|default:record.user.username }}</strong> &middot;
+      {% endif %}
+      Completed {{ record.created_at|date:"d M Y, H:i" }}
+      <span class="badge bg-secondary-lt ms-1">Engine v{{ record.engine_version }}</span>
+    </p>
+  </div>
+  <div class="btn-list">
+    {% if clinician_view %}
+      <a href="{% url 'users:clinician' %}" class="btn">
+        <i class="fas fa-arrow-left me-1"></i> Clinician dashboard
+      </a>
+    {% else %}
       <a href="{% url 'health:assessment_form' %}" class="btn">
         <i class="fas fa-rotate me-1"></i> New assessment
       </a>
       <a href="{% url 'health:history' %}" class="btn">
         <i class="fas fa-clock-rotate-left me-1"></i> History
       </a>
-    </div>
+    {% endif %}
+    <a href="{% url 'health:export' record.pk %}" class="btn">
+      <i class="fas fa-file-excel me-1"></i> Export
+    </a>
+    <button type="button" class="btn" onclick="window.print()">
+      <i class="fas fa-print me-1"></i> Print
+    </button>
+    {% if not clinician_view %}
+      <form method="post" action="{% url 'health:delete' record.pk %}" class="d-inline"
+            onsubmit="return confirm('Delete this assessment? This cannot be undone.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ghost-danger" title="Delete assessment">
+          <i class="fas fa-trash me-1"></i> Delete
+        </button>
+      </form>
+    {% endif %}
   </div>
 </div>
 
 <div class="row row-cards">
   <!-- Score -->
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-body text-center">
-        <div class="text-secondary text-uppercase mb-2">Overall risk score</div>
-        <div class="display-4 fw-bold text-{{ record.level_colour }}">{{ record.risk_score }}<span class="fs-3 text-secondary">/100</span></div>
-        <div class="mt-2">
-          <span class="badge bg-{{ record.level_colour }} badge-pill">{{ record.risk_level }} risk</span>
+  <div class="col-lg-4">
+    <div class="card report-score-card h-100">
+      <div class="card-body d-flex flex-column justify-content-center">
+        <div class="subheader mb-2">Overall risk score</div>
+        <div class="score-ring"
+             style="--score: {{ record.risk_score }}; --ring-colour: {% if record.level_colour == 'success' %}var(--tblr-green){% elif record.level_colour == 'warning' %}var(--tblr-yellow){% elif record.level_colour == 'danger' %}var(--tblr-red){% else %}var(--tblr-purple){% endif %};">
+          <div class="score-ring-inner">
+            <div class="score-ring-value text-{{ record.level_colour }}">{{ record.risk_score }}</div>
+            <div class="score-ring-max">out of 100</div>
+          </div>
         </div>
-        <div class="progress mt-3">
-          <div class="progress-bar bg-{{ record.level_colour }}" style="width: {{ record.risk_score }}%" role="progressbar"></div>
+        <div class="mb-2">
+          <span class="badge bg-{{ record.level_colour }} badge-pill px-3 py-2">{{ record.risk_level }} risk</span>
         </div>
-        <p class="text-secondary mt-3 mb-0">{{ record.summary }}</p>
+        <p class="text-secondary mb-0 small">{{ record.summary }}</p>
+        {% if projected_score < record.risk_score %}
+          <div class="alert alert-success mt-3 mb-0 py-2 px-3 text-start" role="alert">
+            <i class="fas fa-arrow-trend-down me-1"></i>
+            Following your recommendations could bring your score to about
+            <strong>{{ projected_score }}/100</strong>.
+          </div>
+        {% endif %}
       </div>
     </div>
   </div>
 
   <!-- Key measurements -->
-  <div class="col-md-8">
-    <div class="card">
+  <div class="col-lg-8">
+    <div class="card h-100">
       <div class="card-header">
         <h3 class="card-title">Key measurements</h3>
+        <div class="card-actions text-secondary small">{{ record.created_at|date:"d M Y" }}</div>
       </div>
       <div class="card-body">
         <div class="row g-3">
@@ -52,14 +87,14 @@
             <div class="text-secondary small">{{ record.bmi_category|default:"Not calculated" }}</div>
           </div>
           <div class="col-6 col-lg-3">
+            <div class="subheader">Waist-to-height</div>
+            <div class="h3 mb-0">{{ record.whtr|default:"-" }}</div>
+            <div class="text-secondary small">{{ record.whtr_category|default:"Not calculated" }}</div>
+          </div>
+          <div class="col-6 col-lg-3">
             <div class="subheader">Blood pressure</div>
             <div class="h3 mb-0">{{ record.systolic }}/{{ record.diastolic }}</div>
             <div class="text-secondary small">{{ record.get_blood_pressure_band_display }}</div>
-          </div>
-          <div class="col-6 col-lg-3">
-            <div class="subheader">Waist</div>
-            <div class="h3 mb-0">{{ record.waist_cm }} cm</div>
-            <div class="text-secondary small">Height {{ record.height_cm }} cm</div>
           </div>
           <div class="col-6 col-lg-3">
             <div class="subheader">Sleep</div>
@@ -85,33 +120,146 @@
             <div class="subheader">Diet</div>
             <div>{{ record.get_diet_quality_display }}</div>
           </div>
+          <div class="col-6 col-md-3">
+            <div class="subheader">Family history</div>
+            <div>{{ record.get_family_history_display }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subheader">Conditions</div>
+            <div>{{ record.get_conditions_display }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subheader">Stress</div>
+            <div>{{ record.get_stress_level_display }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subheader">Fruit &amp; veg</div>
+            <div>{{ record.fruit_veg_servings }} servings/day</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Findings -->
+  {% if comparison %}
+  <!-- Comparison -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-arrow-trend-up text-blue me-2"></i>Since your last assessment
+          <span class="text-secondary fw-normal ms-2">{{ comparison.previous.created_at|date:"d M Y" }}</span>
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for row in comparison.rows %}
+            <div class="col-6 col-md-4 col-lg-2">
+              <div class="subheader">{{ row.label }}</div>
+              <div class="h3 mb-0">{{ row.after }}{{ row.unit }}</div>
+              <div class="small
+                {% if row.trend == 'better' %}text-success
+                {% elif row.trend == 'worse' %}text-danger
+                {% else %}text-secondary{% endif %}">
+                {% if row.trend == 'same' %}
+                  No change
+                {% else %}
+                  <i class="fas fa-arrow-{% if row.change < 0 %}down{% else %}up{% endif %} me-1"></i>
+                  {{ row.change }}{{ row.unit }}
+                {% endif %}
+                <span class="text-secondary">(was {{ row.before }}{{ row.unit }})</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Targets -->
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">Your personalised targets</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Current</th>
+              <th>Target</th>
+              <th class="w-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for target in record.target_list %}
+              <tr>
+                <td class="fw-bold">{{ target.label }}</td>
+                <td class="text-secondary">{{ target.current }}</td>
+                <td>{{ target.target }}</td>
+                <td>
+                  <span class="badge bg-{% if target.status == 'good' %}success{% else %}warning{% endif %}-lt report-target-badge">
+                    {% if target.status == 'good' %}On target{% else %}Needs work{% endif %}
+                  </span>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-secondary">No targets available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breakdown chart -->
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">Where your score comes from</h3>
+        <div class="card-actions text-secondary small">Risk points by factor</div>
+      </div>
+      <div class="card-body">
+        <div id="breakdown-chart" style="min-height: 280px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk factors -->
   <div class="col-12">
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">Risk factors identified</h3>
         <div class="card-actions text-secondary small">Ordered by contribution to your score</div>
       </div>
-      {% if record.findings %}
+      {% if record.finding_list %}
         <div class="table-responsive">
           <table class="table table-vcenter card-table">
             <thead>
               <tr>
                 <th>Factor</th>
                 <th>What we found</th>
+                <th>Band</th>
+                <th class="w-25">Contribution</th>
                 <th class="w-1"></th>
               </tr>
             </thead>
             <tbody>
-              {% for finding in record.findings %}
+              {% for finding in record.finding_list %}
                 <tr>
                   <td class="fw-bold">{{ finding.label }}</td>
                   <td class="text-secondary">{{ finding.detail }}</td>
+                  <td><span class="badge bg-secondary-lt">{{ finding.band }}</span></td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar bg-red" style="width: {{ finding.percentage }}%"></div>
+                      </div>
+                      <span class="text-secondary small">{{ finding.points }}/{{ finding.max_points }}</span>
+                    </div>
+                  </td>
                   <td>
                     <span class="badge bg-red-lt">+{{ finding.points }}</span>
                   </td>
@@ -134,26 +282,79 @@
     </div>
   </div>
 
-  <!-- Recommendations -->
+  <!-- Top priorities -->
+  {% if record.top_recommendations %}
   <div class="col-12">
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">
-          <i class="fas fa-spa text-green me-2"></i>Personalised lifestyle recommendations
+          <i class="fas fa-bullseye text-red me-2"></i>Do these first
+        </h3>
+        <div class="card-actions text-secondary small">Top 3 by potential score reduction</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for rec in record.top_recommendations %}
+            <div class="col-md-4">
+              <div class="dh-recommendation {% if forloop.first %}is-priority{% endif %}">
+                <div class="d-flex align-items-start gap-2 mb-2">
+                  <span class="dh-recommendation-num">#{{ rec.priority }}</span>
+                  <div>
+                    <h4>{{ rec.title }}</h4>
+                    <div class="dh-recommendation-meta">{{ rec.category }} &middot; {{ rec.timeframe }}</div>
+                  </div>
+                </div>
+                <p class="text-secondary small mb-2">{{ rec.advice }}</p>
+                {% if rec.action_steps %}
+                  <ul>
+                    {% for step in rec.action_steps %}<li>{{ step }}</li>{% endfor %}
+                  </ul>
+                {% endif %}
+                <div class="dh-recommendation-target">
+                  <i class="fas fa-bullseye me-1"></i><strong>{{ rec.target }}</strong>
+                </div>
+                <div class="mt-2">
+                  <span class="badge bg-green-lt">up to -{{ rec.points_saved }} points</span>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- All recommendations -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-spa text-green me-2"></i>All lifestyle recommendations
         </h3>
       </div>
-      {% if record.recommendations %}
+      {% if record.recommendation_list %}
         <div class="card-body">
           <div class="row g-3">
-            {% for rec in record.recommendations %}
+            {% for rec in record.recommendation_list %}
               <div class="col-md-6">
-                <div class="card card-sm">
-                  <div class="card-body">
-                    <div class="d-flex align-items-start">
-                      <span class="badge bg-green-lt me-3">{{ forloop.counter }}</span>
-                      <div>
-                        <h4 class="mb-1">{{ rec.title }}</h4>
-                        <p class="text-secondary mb-0">{{ rec.advice }}</p>
+                <div class="dh-recommendation">
+                  <div class="d-flex align-items-start gap-2">
+                    <span class="dh-recommendation-num">{{ rec.priority }}</span>
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between align-items-start gap-2">
+                        <h4>{{ rec.title }}</h4>
+                        <span class="badge bg-secondary-lt">{{ rec.category }}</span>
+                      </div>
+                      <p class="text-secondary small mb-2 mt-1">{{ rec.advice }}</p>
+                      {% if rec.action_steps %}
+                        <ul>
+                          {% for step in rec.action_steps %}<li>{{ step }}</li>{% endfor %}
+                        </ul>
+                      {% endif %}
+                      <div class="dh-recommendation-target">
+                        <i class="fas fa-bullseye me-1"></i>Target: <strong>{{ rec.target }}</strong>
+                        &middot; {{ rec.timeframe }}
                       </div>
                     </div>
                   </div>
@@ -188,4 +389,41 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ breakdown|json_script:"breakdown-data" }}
+<script src="{% static 'libs/apexcharts/dist/apexcharts.min.js' %}"></script>
+<script>
+(function () {
+  const breakdown = JSON.parse(document.getElementById('breakdown-data').textContent || '[]');
+  if (!breakdown.length || !window.ApexCharts) return;
+
+  const labels = breakdown.map((item) => item.label);
+  const points = breakdown.map((item) => item.points);
+
+  new ApexCharts(document.getElementById('breakdown-chart'), {
+    chart: { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
+    series: [{ name: 'Points', data: points }],
+    plotOptions: {
+      bar: { horizontal: true, borderRadius: 4, distributed: true, barHeight: '58%' }
+    },
+    colors: ['#d63939', '#f59f00', '#0ca678', '#d63939', '#f59f00', '#0ca678', '#d63939', '#f59f00', '#0ca678', '#d63939', '#f59f00'],
+    dataLabels: {
+      enabled: true,
+      formatter: (value) => value + ' pts',
+      style: { fontSize: '11px', fontWeight: 600 }
+    },
+    xaxis: {
+      categories: labels,
+      title: { text: 'Risk points', style: { fontSize: '11px' } },
+      labels: { style: { fontSize: '11px' } }
+    },
+    yaxis: { labels: { style: { fontSize: '11px' } } },
+    legend: { show: false },
+    grid: { borderColor: '#e6e8ef', strokeDashArray: 4 },
+    tooltip: { y: { formatter: (value) => value + ' risk points' } }
+  }).render();
+})();
+</script>
 {% endblock %}

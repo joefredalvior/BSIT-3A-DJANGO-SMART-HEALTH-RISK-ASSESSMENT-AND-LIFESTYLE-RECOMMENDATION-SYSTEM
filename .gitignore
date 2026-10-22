@@ -20,6 +20,8 @@ ENV/
 db.sqlite3-journal
 media/
 local_settings.py
+staticfiles/
+.env
 
 # Tooling
 .pytest_cache/

@@ -1,157 +1,155 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme-primary="teal">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>
-    Sign in - Azuelo Technology
-  </title>
+  <title>Sign in - HealthWise</title>
+  <link rel="icon" href="{% static 'favicon-dev.ico' %}" type="image/x-icon" />
   <link href="{% static 'css/tabler.css' %}" rel="stylesheet" />
-  <link href="{% static 'css/tabler-flags.css' %}" rel="stylesheet" />
-  <link href="{% static 'css/tabler-socials.css' %}" rel="stylesheet" />
-  <link href="{% static 'css/tabler-payments.css' %}" rel="stylesheet" />
   <link href="{% static 'css/tabler-vendors.css' %}" rel="stylesheet" />
-  <link href="{% static 'css/tabler-marketing.css' %}" rel="stylesheet" />
-  <link href="{% static 'css/tabler-themes.css' %}" rel="stylesheet" />
+  <link href="{% static 'css/app-theme.css' %}" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
   <script src="{% static 'js/tabler-theme.js' %}"></script>
-  <div class="page page-center">
-    <div class="container container-tight py-4">
 
-     <div class="card card-md">
-      <div class="card-body">
+  <div class="auth-page">
+    <div class="auth-shell">
 
-        <center class="mt-n4">
-        <i class='far fa-calendar' style='font-size:40px'></i>
-        </center>
-        <h2 class="h3 text-center mb-4">Sign in to start your session</h2>
+      <aside class="auth-aside">
+        <a href="{% url 'login' %}" class="auth-brand">
+          <span class="dh-brand-mark"><i class="fas fa-heart-pulse"></i></span>
+          <span class="lh-1">
+            <span class="dh-brand-name">Health<span class="text-warning">Wise</span></span>
+            <span class="dh-brand-sub">Advisory System</span>
+          </span>
+        </a>
 
-        <form method="post">
+        <div class="auth-aside-body">
+          <div class="auth-aside-eyebrow">Smart health screening</div>
+          <h1 class="auth-aside-title">Know your health risks before they become problems.</h1>
+          <p class="auth-aside-sub">
+            HealthWise turns your everyday health measurements into a clear risk
+            score and a practical plan you can actually follow.
+          </p>
+
+          <ul class="auth-features">
+            <li>
+              <span class="auth-feature-icon"><i class="fas fa-chart-simple"></i></span>
+              <span>A transparent 0–100 risk score across 11 health factors.</span>
+            </li>
+            <li>
+              <span class="auth-feature-icon"><i class="fas fa-spa"></i></span>
+              <span>Personalised lifestyle recommendations with realistic targets.</span>
+            </li>
+            <li>
+              <span class="auth-feature-icon"><i class="fas fa-clock-rotate-left"></i></span>
+              <span>Track your progress over time with assessment history.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="auth-aside-footer">
+          Educational screening aid only — not a medical diagnosis.
+        </div>
+      </aside>
+
+      <main class="auth-main">
+        <div class="auth-mobile-brand">
+          <span class="dh-brand-mark"><i class="fas fa-heart-pulse"></i></span>
+          <span class="dh-brand-name" style="color: var(--tblr-body-color);">Health<span class="text-primary">Wise</span></span>
+        </div>
+
+        <div class="auth-card-head">
+          <h1>Welcome back</h1>
+          <p>Sign in to continue to your health dashboard.</p>
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div id="error-message" class="alert alert-danger auth-alert" role="alert">
+              <i class="fas fa-circle-exclamation me-2"></i>{{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" novalidate>
           {% csrf_token %}
 
-          {% if messages %}
-          {% for message in messages %}
-          <div id="error-message" class="alert alert-danger">
-            {{ message }}
-          </div>
-          {% endfor %}
-          {% endif %}
           <div class="mb-3">
-            <label class="form-label">Username</label>
-            <input type="text" class="form-control" name="username" autocomplete="off" {% if locked %}disabled{% endif %}>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">
-              Password
-            </label>
-            <div class="input-group input-group-flat">
-              <input type="password" class="form-control" name="password" autocomplete="off" {% if locked %}disabled{% endif %}>
+            <label class="form-label" for="id_username">Username</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-user"></i></span>
+              <input type="text" class="form-control" id="id_username" name="username"
+                     autocomplete="username" autofocus placeholder="Enter your username"
+                     {% if locked %}disabled{% endif %} required>
             </div>
           </div>
-          <div class="form-footer d-flex justify-content-end">
-            <button type="submit" class="btn btn-primary w-50">
-              <i class="fas fa-sign-in-alt me-1"></i> Sign in
-            </button>
+
+          <div class="mb-3">
+            <label class="form-label" for="id_password">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-lock"></i></span>
+              <input type="password" class="form-control" id="id_password" name="password"
+                     autocomplete="current-password" placeholder="Enter your password"
+                     {% if locked %}disabled{% endif %} required>
+              <button class="btn btn-outline-secondary" type="button" id="togglePassword"
+                      tabindex="-1" aria-label="Show password">
+                <i class="fas fa-eye" id="eyeIcon"></i>
+              </button>
+            </div>
           </div>
-       </form>
-     </div>
-   </div>
- </div>
- <!-- <div class="text-center text-secondary mt-n1">
-  Don't have an account?
-  <a href="{% url 'register' %}" class="text-primary fw-bold">Register</a>
- </div> -->
-</div>
 
-{% include 'theme/settings.html' %}
+          <button type="submit" class="btn btn-primary w-100 auth-submit" {% if locked %}disabled{% endif %}>
+            <i class="fas fa-arrow-right-to-bracket me-2"></i>Sign in
+          </button>
+        </form>
 
-<script src="{% static 'js/tabler.js' %}" defer></script>
-{% if locked %}
-<script>
-  let remaining = {{ remaining }};
-  const messageBox = document.getElementById("error-message");
+        <p class="auth-switch">
+          Don't have an account?
+          <a href="{% url 'register' %}">Create one</a>
+        </p>
+      </main>
 
-  let interval = setInterval(function() {
-    remaining--;
+    </div>
+  </div>
 
-    if (remaining > 0) {
-      messageBox.innerHTML =
-      "Too many failed attempts. Try again in " + remaining + " seconds.";
-    } else {
-      clearInterval(interval);
-      window.location.href = "{% url 'login' %}";
-    }
+  {% include 'theme/settings.html' %}
 
-  }, 1000);
-</script>
-{% endif %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    var themeConfig = {
-      theme: "light",
-      "theme-base": "gray",
-      "theme-font": "sans-serif",
-      "theme-primary": "blue",
-      "theme-radius": "1",
-    };
+  <script src="{% static 'js/tabler.js' %}" defer></script>
+  <script>
+    (function () {
+      const toggle = document.getElementById('togglePassword');
+      const input = document.getElementById('id_password');
+      const icon = document.getElementById('eyeIcon');
+      if (toggle && input && icon) {
+        toggle.addEventListener('click', function () {
+          const show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          icon.classList.toggle('fa-eye', !show);
+          icon.classList.toggle('fa-eye-slash', show);
+        });
+      }
+    })();
+  </script>
 
-    var url = new URL(window.location);
-    var form = document.getElementById("offcanvasSettings");
-    var resetButton = document.getElementById("reset-changes");
-
-    var checkItems = function () {
-      for (var key in themeConfig) {
-        var value =
-        window.localStorage["tabler-" + key] || themeConfig[key];
-
-        if (!!value) {
-          var radios = form.querySelectorAll(`[name="${key}"]`);
-
-          if (!!radios) {
-            radios.forEach((radio) => {
-              radio.checked = radio.value === value;
-            });
-          }
+  {% if locked %}
+    <script>
+      let remaining = {{ remaining }};
+      const messageBox = document.getElementById('error-message');
+      const interval = setInterval(function () {
+        remaining--;
+        if (remaining > 0 && messageBox) {
+          messageBox.innerHTML = '<i class="fas fa-circle-exclamation me-2"></i>Too many failed attempts. Try again in ' + remaining + ' seconds.';
+        } else {
+          clearInterval(interval);
+          window.location.href = "{% url 'login' %}";
         }
-      }
-    };
-
-    form.addEventListener("change", function (event) {
-      var target = event.target,
-      name = target.name,
-      value = target.value;
-
-      for (var key in themeConfig) {
-        if (name === key) {
-          document.documentElement.setAttribute("data-bs-" + key, value);
-          window.localStorage.setItem("tabler-" + key, value);
-          url.searchParams.set(key, value);
-        }
-      }
-
-      window.history.pushState({}, "", url);
-    });
-
-    resetButton.addEventListener("click", function () {
-      for (var key in themeConfig) {
-        var value = themeConfig[key];
-        document.documentElement.removeAttribute("data-bs-" + key);
-        window.localStorage.removeItem("tabler-" + key);
-        url.searchParams.delete(key);
-      }
-
-      checkItems();
-
-      window.history.pushState({}, "", url);
-    });
-
-    checkItems();
-  });
-</script>
+      }, 1000);
+    </script>
+  {% endif %}
 </body>
 </html>

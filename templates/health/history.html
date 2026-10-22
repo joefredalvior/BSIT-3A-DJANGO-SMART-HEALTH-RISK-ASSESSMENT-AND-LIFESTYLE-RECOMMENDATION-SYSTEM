@@ -1,17 +1,16 @@
 {% extends "theme/base.html" %}
+{% load static %}
 {% block content %}
-<div class="page-header d-print-none" aria-label="Page header">
-  <div class="row align-items-center">
-    <div class="col">
-      <div class="page-pretitle">Health advisory</div>
-      <h2 class="page-title">Assessment History</h2>
-      <p class="text-secondary mt-2">Every risk assessment you have completed.</p>
-    </div>
-    <div class="col-auto">
-      <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i> New assessment
-      </a>
-    </div>
+<div class="dh-page-head d-print-none">
+  <div>
+    <div class="page-pretitle">Health advisory</div>
+    <h2 class="page-title">Assessment History</h2>
+    <p class="dh-page-head-sub">Every risk assessment you have completed, newest first.</p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
+      <i class="fas fa-plus me-1"></i> New assessment
+    </a>
   </div>
 </div>
 
@@ -20,32 +19,68 @@
     <div class="col-sm-4">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Assessments completed</div>
-          <div class="h1 mb-0">{{ records|length }}</div>
+          <div class="dh-metric">
+            <span class="dh-metric-icon primary"><i class="fas fa-clipboard-check"></i></span>
+            <div>
+              <div class="dh-metric-value">{{ total_count }}</div>
+              <div class="dh-metric-label">Assessments completed</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     <div class="col-sm-4">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Average risk score</div>
-          <div class="h1 mb-0">{{ average_score|default:"-" }}</div>
+          <div class="dh-metric">
+            <span class="dh-metric-icon info"><i class="fas fa-chart-simple"></i></span>
+            <div>
+              <div class="dh-metric-value">{{ average_score|default:"-" }}</div>
+              <div class="dh-metric-label">Average risk score</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     <div class="col-sm-4">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Latest risk level</div>
-          {% if latest %}
-            <span class="badge bg-{{ latest.level_colour }} badge-pill mt-2">{{ latest.risk_level }} risk</span>
-          {% endif %}
+          <div class="dh-metric">
+            <span class="dh-metric-icon {{ latest.level_colour|default:'secondary' }}"><i class="fas fa-shield-heart"></i></span>
+            <div>
+              {% if latest %}
+                <div class="dh-metric-value text-{{ latest.level_colour }}" style="font-size:1.15rem;">{{ latest.risk_level }} risk</div>
+                <div class="dh-metric-label">Latest assessment</div>
+              {% else %}
+                <div class="dh-metric-value" style="font-size:1.15rem;">—</div>
+                <div class="dh-metric-label">Latest assessment</div>
+              {% endif %}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  {% if trend|length > 1 %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-chart-line text-blue me-2"></i>Risk score trend
+        </h3>
+        <div class="card-actions text-secondary small">Last {{ trend|length }} assessments</div>
+      </div>
+      <div class="card-body">
+        <div id="trend-chart" style="min-height: 280px;"></div>
+      </div>
+    </div>
+  {% endif %}
+
   <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">All assessments</h3>
+      <div class="card-actions text-secondary small">{{ total_count }} total</div>
+    </div>
     <div class="table-responsive">
       <table class="table table-vcenter card-table">
         <thead>
@@ -55,33 +90,75 @@
             <th>Risk level</th>
             <th>BMI</th>
             <th>Blood pressure</th>
+            <th>Waist</th>
             <th class="w-1"></th>
           </tr>
         </thead>
         <tbody>
           {% for record in records %}
             <tr>
-              <td>{{ record.created_at|date:"d M Y, H:i" }}</td>
+              <td class="text-secondary">{{ record.created_at|date:"d M Y, H:i" }}</td>
               <td class="fw-bold">{{ record.risk_score }}</td>
               <td><span class="badge bg-{{ record.level_colour }}">{{ record.risk_level }}</span></td>
               <td>{{ record.bmi|default:"-" }}</td>
               <td>{{ record.systolic }}/{{ record.diastolic }}</td>
+              <td>{{ record.waist_cm }} cm</td>
               <td>
-                <a href="{% url 'health:report' record.pk %}" class="btn btn-sm">
-                  View report
-                </a>
+                <div class="btn-list flex-nowrap">
+                  <a href="{% url 'health:report' record.pk %}" class="btn btn-sm">
+                    View report
+                  </a>
+                  <a href="{% url 'health:export' record.pk %}" class="btn btn-sm btn-ghost-secondary" title="Export to Excel">
+                    <i class="fas fa-file-excel"></i>
+                  </a>
+                  <form method="post" action="{% url 'health:delete' record.pk %}" class="d-inline"
+                        onsubmit="return confirm('Delete this assessment? This cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-ghost-danger" title="Delete">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    {% if records.paginator.num_pages > 1 %}
+      <div class="card-footer d-flex align-items-center">
+        <p class="m-0 text-secondary">
+          Showing {{ records.start_index }} to {{ records.end_index }} of {{ total_count }}
+        </p>
+        <ul class="pagination m-0 ms-auto">
+          {% if records.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ records.previous_page_number }}">
+                <i class="fas fa-chevron-left"></i> prev
+              </a>
+            </li>
+          {% endif %}
+          {% for num in records.paginator.page_range %}
+            <li class="page-item {% if records.number == num %}active{% endif %}">
+              <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+          {% endfor %}
+          {% if records.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ records.next_page_number }}">
+                next <i class="fas fa-chevron-right"></i>
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    {% endif %}
   </div>
 {% else %}
   <div class="card">
     <div class="card-body">
-      <div class="empty">
-        <div class="empty-icon"><i class="fas fa-heart-pulse"></i></div>
+      <div class="empty py-5">
+        <div class="empty-icon"><i class="fas fa-heart-pulse fa-2x"></i></div>
         <p class="empty-title">No assessments yet</p>
         <p class="empty-subtitle text-secondary">
           Complete your first health risk assessment to receive personalised
@@ -95,5 +172,35 @@
       </div>
     </div>
   </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if trend|length > 1 %}
+{{ trend|json_script:"trend-data" }}
+<script src="{% static 'libs/apexcharts/dist/apexcharts.min.js' %}"></script>
+<script>
+(function () {
+  const trend = JSON.parse(document.getElementById('trend-data').textContent || '[]');
+  if (!trend.length || !window.ApexCharts) return;
+
+  new ApexCharts(document.getElementById('trend-chart'), {
+    chart: { type: 'line', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
+    series: [
+      { name: 'Risk score', data: trend.map((item) => item.score) },
+      { name: 'BMI', data: trend.map((item) => item.bmi) },
+      { name: 'Systolic', data: trend.map((item) => item.systolic) }
+    ],
+    stroke: { curve: 'smooth', width: 3 },
+    markers: { size: 4, strokeWidth: 2 },
+    xaxis: { categories: trend.map((item) => item.date), labels: { style: { fontSize: '11px' } } },
+    yaxis: { min: 0, labels: { style: { fontSize: '11px' } } },
+    colors: ['#d63939', '#0ca678', '#f59f00'],
+    legend: { position: 'top', horizontalAlign: 'right' },
+    grid: { borderColor: '#e6e8ef', strokeDashArray: 4 },
+    tooltip: { shared: true, intersect: false }
+  }).render();
+})();
+</script>
 {% endif %}
 {% endblock %}

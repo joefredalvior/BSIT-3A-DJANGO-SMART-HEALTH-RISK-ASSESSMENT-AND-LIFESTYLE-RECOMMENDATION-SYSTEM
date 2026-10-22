@@ -8,6 +8,7 @@ from django.core.validators import validate_email
 from django.db import IntegrityError
 from django.db.models import Q
 
+from apps.health import engine
 from apps.scoping import scoped_info, scoped_infos
 from .models import Info
 
@@ -154,3 +155,77 @@ def info_delete_ajax(request, pk):
     info = scoped_info(request.user, pk)
     info.delete()
     return JsonResponse({'status': 'deleted'})
+
+GUIDE_SECTIONS = [
+    {
+        'title': 'Body mass index (BMI)',
+        'summary': 'A ratio of weight to height used to screen for underweight, overweight and obesity.',
+        'bands': [
+            ('Below 18.5', 'Underweight'),
+            ('18.5 - 24.9', 'Healthy weight'),
+            ('25.0 - 29.9', 'Overweight'),
+            ('30.0 - 34.9', 'Obesity class I'),
+            ('35.0 - 39.9', 'Obesity class II'),
+            ('40.0 and above', 'Obesity class III'),
+        ],
+    },
+    {
+        'title': 'Blood pressure',
+        'summary': 'Systolic (top) and diastolic (bottom) pressure in millimetres of mercury (mmHg).',
+        'bands': [
+            ('Below 120/80', 'Normal'),
+            ('120-129 / below 80', 'Elevated'),
+            ('130-139 / 80-89', 'Stage 1 hypertension'),
+            ('140+ / 90+', 'Stage 2 hypertension'),
+            ('180+ / 120+', 'Hypertensive crisis - seek urgent care'),
+        ],
+    },
+    {
+        'title': 'Waist and waist-to-height ratio',
+        'summary': 'Central fat is closely linked to heart disease and type 2 diabetes.',
+        'bands': [
+            ('Waist below 94 cm (men)', 'Lower risk'),
+            ('Waist below 80 cm (women)', 'Lower risk'),
+            ('Waist-to-height below 0.5', 'Healthy'),
+            ('Waist-to-height 0.5 - 0.59', 'Increased risk'),
+            ('Waist-to-height 0.6+', 'High risk'),
+        ],
+    },
+    {
+        'title': 'Physical activity',
+        'summary': 'Adults should aim for at least 150 minutes of moderate activity each week.',
+        'bands': [
+            ('Sedentary', 'Little or no exercise'),
+            ('Light', '1-3 days per week'),
+            ('Moderate', '3-5 days per week'),
+            ('Active', '6-7 days per week'),
+        ],
+    },
+    {
+        'title': 'Sleep',
+        'summary': 'Most adults need 7-9 hours of sleep per night for recovery and metabolic health.',
+        'bands': [
+            ('Under 6 hours', 'Short sleep'),
+            ('7-9 hours', 'Recommended range'),
+            ('Over 9 hours', 'Long sleep'),
+        ],
+    },
+    {
+        'title': 'Smoking, alcohol and stress',
+        'summary': 'These lifestyle factors interact with blood pressure, sleep and weight.',
+        'bands': [
+            ('Smoking', 'Any amount raises cardiovascular risk; quitting is the biggest single gain'),
+            ('Alcohol', 'Keep to no more than 14 units per week, spread across days'),
+            ('Stress', 'Chronic stress affects blood pressure, sleep and eating patterns'),
+        ],
+    },
+]
+
+
+@login_required(login_url='login')
+def guide(request):
+    """Static educational reference for every factor the engine scores."""
+    return render(request, 'info/guide.html', {
+        'sections': GUIDE_SECTIONS,
+        'disclaimer': engine.MEDICAL_DISCLAIMER,
+    })
