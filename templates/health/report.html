@@ -27,8 +27,17 @@
       </a>
     {% endif %}
     <a href="{% url 'health:export' record.pk %}" class="btn">
-      <i class="fas fa-file-excel me-1"></i> Export
+      <i class="fas fa-file-excel me-1"></i> Excel
     </a>
+    <a href="{% url 'health:report_pdf' record.pk %}" class="btn">
+      <i class="fas fa-file-pdf me-1"></i> PDF
+    </a>
+    <form method="post" action="{% url 'health:email_report' record.pk %}" class="d-inline">
+      {% csrf_token %}
+      <button type="submit" class="btn">
+        <i class="fas fa-envelope me-1"></i> Email
+      </button>
+    </form>
     <button type="button" class="btn" onclick="window.print()">
       <i class="fas fa-print me-1"></i> Print
     </button>
@@ -177,6 +186,159 @@
   </div>
   {% endif %}
 
+  {% if peer_comparison %}
+  <div class="col-12 d-print-none">
+    <div class="card">
+      <div class="card-body d-flex flex-wrap align-items-center gap-3">
+        <span class="dh-metric-icon blue"><i class="fas fa-users"></i></span>
+        <div class="flex-grow-1">
+          <div class="fw-bold">How you compare with similar adults</div>
+          <div class="text-secondary small">
+            Average score for {{ peer_comparison.count }} similar assessment{{ peer_comparison.count|pluralize }}:
+            {{ peer_comparison.average }}/100.
+            {% if peer_comparison.difference < 0 %}
+              Your score is {{ peer_comparison.difference|stringformat:"d"|slice:"1:" }} points lower than the average.
+            {% elif peer_comparison.difference > 0 %}
+              Your score is {{ peer_comparison.difference }} points higher than the average.
+            {% else %}
+              Your score matches the average.
+            {% endif %}
+          </div>
+        </div>
+        <span class="badge bg-blue-lt">Aggregate, anonymised data</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not clinician_view and not caregiver_view and not shared_view %}
+  <div class="col-12 d-print-none" id="share-report">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-share-nodes text-teal me-2"></i>Share this report</h3>
+        <div class="card-actions text-secondary small">Read-only &middot; expires after 7 days</div>
+      </div>
+      <div class="card-body">
+        {% if active_share and share_url %}
+          <div class="row g-4 align-items-center">
+            <div class="col-md-3 text-center">
+              {% if share_qr %}<img src="{{ share_qr }}" alt="QR code for this report link" class="img-fluid border rounded bg-white p-2" style="max-width: 160px;">{% endif %}
+            </div>
+            <div class="col-md-9">
+              <label class="form-label" for="share-link">Private link</label>
+              <div class="input-group mb-2">
+                <input class="form-control" id="share-link" value="{{ share_url }}" readonly>
+                <button class="btn btn-outline-secondary" type="button"
+                        onclick="navigator.clipboard.writeText(document.getElementById('share-link').value); this.textContent='Copied';">
+                  Copy
+                </button>
+              </div>
+              <p class="text-secondary small mb-2">
+                Viewed {{ active_share.view_count }} time{{ active_share.view_count|pluralize }} &middot;
+                expires {{ active_share.expires_at|date:"d M Y H:i" }}.
+                Anyone with this link can read the report.
+              </p>
+              <form method="post" action="{% url 'health:revoke_share' active_share.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger" type="submit">Revoke link</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-secondary">Create a private, read-only link you can send to a caregiver or clinician. Links expire automatically.</p>
+          <form method="post" action="{% url 'health:share_report' record.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-primary" type="submit"><i class="fas fa-link me-1"></i> Create share link</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7 d-print-none" id="what-if">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-flask text-purple me-2"></i>What if I change something?</h3>
+      </div>
+      <div class="card-body">
+        <p class="text-secondary small">Adjust a few habits to see an estimated score. This does not change your saved assessment.</p>
+        <form id="simulate-form">
+          {% csrf_token %}
+          <input type="hidden" name="assessment" value="{{ record.pk }}">
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small" for="sim-weight">Weight (kg)</label>
+              <input class="form-control form-control-sm" id="sim-weight" name="weight_kg" type="number" step="0.1" value="{{ record.weight_kg }}">
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="sim-waist">Waist (cm)</label>
+              <input class="form-control form-control-sm" id="sim-waist" name="waist_cm" type="number" value="{{ record.waist_cm }}">
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="sim-systolic">Systolic</label>
+              <input class="form-control form-control-sm" id="sim-systolic" name="systolic" type="number" value="{{ record.systolic }}">
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="sim-diastolic">Diastolic</label>
+              <input class="form-control form-control-sm" id="sim-diastolic" name="diastolic" type="number" value="{{ record.diastolic }}">
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="sim-activity">Activity</label>
+              <select class="form-select form-select-sm" id="sim-activity" name="activity_level">
+                {% for value, label in activity_levels %}<option value="{{ value }}" {% if value == record.activity_level %}selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="sim-smoking">Smoking</label>
+              <select class="form-select form-select-sm" id="sim-smoking" name="smoking_status">
+                {% for value, label in smoking_statuses %}<option value="{{ value }}" {% if value == record.smoking_status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="sim-sleep">Sleep (hours)</label>
+              <input class="form-control form-control-sm" id="sim-sleep" name="sleep_hours" type="number" step="0.5" value="{{ record.sleep_hours }}">
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="sim-diet">Diet quality</label>
+              <select class="form-select form-select-sm" id="sim-diet" name="diet_quality">
+                {% for value, label in diet_qualities %}<option value="{{ value }}" {% if value == record.diet_quality %}selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm mt-3" type="submit">Recalculate estimate</button>
+        </form>
+        <div id="simulate-result" class="mt-3" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5 d-print-none">
+    <div class="card h-100">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-star text-warning me-2"></i>Rate this report</h3></div>
+      <div class="card-body">
+        <form method="post" action="{% url 'wellness:submit_feedback' record.pk %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            {% for value in "12345" %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="rating" id="rating-{{ value }}" value="{{ value }}"
+                       {% if user_feedback and user_feedback.rating|stringformat:"s" == value %}checked{% endif %} required>
+                <label class="form-check-label" for="rating-{{ value }}">{{ value }}</label>
+              </div>
+            {% endfor %}
+            <div class="form-hint">1 = not useful, 5 = very useful</div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="feedback-comments">Comments (optional)</label>
+            <textarea class="form-control" id="feedback-comments" name="comments" rows="3">{{ user_feedback.comments|default:"" }}</textarea>
+          </div>
+          <button class="btn btn-outline-primary" type="submit">Save feedback</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Targets -->
   <div class="col-lg-5">
     <div class="card h-100">
@@ -222,7 +384,18 @@
         <div class="card-actions text-secondary small">Risk points by factor</div>
       </div>
       <div class="card-body">
-        <div id="breakdown-chart" style="min-height: 280px;"></div>
+        <div id="breakdown-chart" role="img"
+             aria-label="Bar chart showing risk points contributed by each health factor"
+             style="min-height: 280px;"></div>
+        <table class="visually-hidden">
+          <caption>Risk points by factor</caption>
+          <thead><tr><th>Factor</th><th>Risk points</th></tr></thead>
+          <tbody>
+            {% for finding in record.finding_list %}
+              <tr><td>{{ finding.label }}</td><td>{{ finding.points }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -325,6 +498,109 @@
   </div>
   {% endif %}
 
+  <!-- Lifestyle plan -->
+  {% if lifestyle_plan %}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-utensils text-orange me-2"></i>Everyday meal &amp; movement plan</h3>
+        <div class="card-actions text-secondary small">General guidance, not a prescription</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          {% for meal in lifestyle_plan.meals %}
+            <div class="col-sm-6 col-lg-3">
+              <div class="border rounded p-3 h-100">
+                <div class="subheader text-orange">{{ meal.name }}</div>
+                <div class="fw-bold small mb-2">{{ meal.idea }}</div>
+                <div class="text-secondary small">{{ meal.note }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="border rounded p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="dh-metric-icon success"><i class="fas fa-person-walking"></i></span>
+            <div>
+              <div class="fw-bold">Aim for about {{ lifestyle_plan.activity.weekly_minutes }} minutes of activity per week</div>
+              <div class="text-secondary small">{{ lifestyle_plan.activity.sessions }}</div>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            {% for example in lifestyle_plan.activity.examples %}
+              <span class="badge bg-success-lt">{{ example }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="text-secondary small mt-3">{{ lifestyle_plan.note }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Clinical notes -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-stethoscope text-blue me-2"></i>Clinical notes
+        </h3>
+        {% if clinician_view %}<div class="card-actions text-secondary small">Staff only for editing</div>{% endif %}
+      </div>
+      <div class="card-body">
+        {% if notes %}
+          <div class="mb-3">
+            {% for note in notes %}
+              <div class="border rounded p-3 mb-2">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div class="small text-secondary">
+                    <strong class="text-body">{{ note.author.get_full_name|default:note.author.username|default:"Clinician" }}</strong>
+                    &middot; {{ note.created_at|date:"d M Y, H:i" }}
+                  </div>
+                  {% if note.follow_up_required %}
+                    <span class="badge bg-warning-lt">
+                      Follow-up{% if note.follow_up_date %} by {{ note.follow_up_date|date:"d M Y" }}{% endif %}
+                    </span>
+                  {% endif %}
+                </div>
+                <p class="mb-0 mt-1">{{ note.note|linebreaksbr }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-secondary small mb-3">No clinical notes have been added yet.</p>
+        {% endif %}
+
+        {% if clinician_view and note_form %}
+          <form method="post" action="{% url 'health:add_note' record.pk %}">
+            {% csrf_token %}
+            <div class="mb-2">
+              <label class="form-label" for="id_note">Add a note</label>
+              {{ note_form.note }}
+            </div>
+            <div class="row g-2 align-items-end">
+              <div class="col-sm-5">
+                <label class="form-label" for="id_follow_up_date">Follow-up date</label>
+                {{ note_form.follow_up_date }}
+              </div>
+              <div class="col-sm-4">
+                <div class="form-check mt-3">
+                  {{ note_form.follow_up_required }}
+                  <label class="form-check-label" for="id_follow_up_required">Follow-up required</label>
+                </div>
+              </div>
+              <div class="col-sm-3">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="fas fa-plus me-1"></i> Add note
+                </button>
+              </div>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
   <!-- All recommendations -->
   <div class="col-12">
     <div class="card">
@@ -424,6 +700,41 @@
     grid: { borderColor: '#e6e8ef', strokeDashArray: 4 },
     tooltip: { y: { formatter: (value) => value + ' risk points' } }
   }).render();
+})();
+
+(function () {
+  const form = document.getElementById('simulate-form');
+  const output = document.getElementById('simulate-result');
+  if (!form || !output) return;
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const payload = {};
+    new FormData(form).forEach(function (value, key) {
+      if (key !== 'csrfmiddlewaretoken' && value !== '') payload[key] = value;
+    });
+    output.innerHTML = '<span class="text-secondary small">Calculating...</span>';
+    try {
+      const response = await fetch("{% url 'health:simulate' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not calculate.');
+      const direction = data.delta < 0 ? 'lower' : (data.delta > 0 ? 'higher' : 'unchanged');
+      output.innerHTML =
+        '<div class="alert alert-info mb-0 py-2">' +
+        '<div class="fw-bold">Estimated score: ' + data.score + '/100 (' + data.level + ' risk)</div>' +
+        '<div class="small">That is ' + Math.abs(data.delta) + ' points ' + direction + ' than your saved score. ' + data.summary + '</div>' +
+        '</div>';
+    } catch (error) {
+      output.innerHTML = '<div class="alert alert-danger mb-0 py-2 small">' + error.message + '</div>';
+    }
+  });
 })();
 </script>
 {% endblock %}

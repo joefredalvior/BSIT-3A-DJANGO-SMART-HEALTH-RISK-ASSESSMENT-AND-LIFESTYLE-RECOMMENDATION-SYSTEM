@@ -1,0 +1,63 @@
+{% extends "theme/base.html" %}
+{% block title %}Clinic appointments{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Clinic</div>
+    <h2 class="page-title">Appointment queue</h2>
+    <p class="dh-page-head-sub">Confirm, complete, or cancel patient appointment requests.</p>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Status</label>
+        <select class="form-select" name="status" onchange="this.form.submit()">
+          <option value="">All statuses</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if value == status_filter %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table card-table table-vcenter">
+      <thead><tr><th>Patient</th><th>When</th><th>Reason</th><th>Status</th><th>Update</th></tr></thead>
+      <tbody>
+        {% for item in appointments %}
+          <tr>
+            <td>
+              <div class="fw-bold">{{ item.patient.get_full_name|default:item.patient.username }}</div>
+              <div class="text-secondary small">{{ item.patient.email }}</div>
+            </td>
+            <td>{{ item.scheduled_for|date:"d M Y H:i" }}<div class="text-secondary small">{{ item.duration_minutes }} min</div></td>
+            <td>{{ item.reason|default:"-" }}</td>
+            <td><span class="badge bg-blue-lt">{{ item.get_status_display }}</span></td>
+            <td>
+              <form method="post" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="appointment_id" value="{{ item.pk }}">
+                <select class="form-select form-select-sm" name="status">
+                  {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if value == item.status %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <input class="form-control form-control-sm" name="notes" placeholder="Note" value="{{ item.notes }}">
+                <button class="btn btn-sm btn-primary" type="submit">Save</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-secondary py-4">No appointments in this queue.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+Hello {{ user.first_name|default:user.username }},
+
+Here is your weekly HealthWise summary.
+
+Latest assessment: {{ latest.created_at|date:"d M Y" }}
+Risk score: {{ latest.risk_score }}/100 ({{ latest.risk_level }} risk)
+{% if latest.bmi %}BMI: {{ latest.bmi }}{% endif %}
+
+{% if goals %}Your active goals:
+{% for goal in goals %}- {{ goal.display_label }}: target {{ goal.target_value }} {{ goal.unit }}{% if goal.due_date %} by {{ goal.due_date|date:"d M Y" }}{% endif %}
+{% endfor %}{% endif %}
+{% if achievements %}Recent achievements:
+{% for item in achievements %}- {{ item.title }}
+{% endfor %}{% endif %}
+
+Open your dashboard: {{ site_url }}/home/
+
+Small, steady habits make a difference. This summary is not medical advice.
+
+HealthWise

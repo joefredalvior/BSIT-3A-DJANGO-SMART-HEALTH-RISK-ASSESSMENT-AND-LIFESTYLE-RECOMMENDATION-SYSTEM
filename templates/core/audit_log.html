@@ -1,0 +1,81 @@
+{% extends "theme/base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Administration</div>
+    <h2 class="page-title">Audit log</h2>
+    <p class="dh-page-head-sub">Security-relevant events recorded by HealthWise.</p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'audit_log_export' %}" class="btn btn-outline-primary">
+      <i class="fas fa-download me-1"></i> Export CSV
+    </a>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Search</label>
+        <input class="form-control" name="q" value="{{ query }}" placeholder="User, IP address or action">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Action</label>
+        <select class="form-select" name="action">
+          <option value="">All actions</option>
+          {% for item in actions %}
+            <option value="{{ item }}" {% if item == action %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">From</label>
+        <input class="form-control" type="date" name="from" value="{{ date_from }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">To</label>
+        <input class="form-control" type="date" name="to" value="{{ date_to }}">
+      </div>
+      <div class="col-md-1">
+        <button class="btn btn-primary w-100" type="submit">Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table card-table table-vcenter">
+      <thead><tr><th>When</th><th>Action</th><th>User</th><th>IP address</th><th>Details</th></tr></thead>
+      <tbody>
+        {% for event in events %}
+          <tr>
+            <td class="text-nowrap">{{ event.created_at|date:"d M Y H:i:s" }}</td>
+            <td><span class="badge bg-secondary-lt">{{ event.action }}</span></td>
+            <td>{{ event.user.username|default:"anonymous" }}</td>
+            <td>{{ event.ip_address|default:"-" }}</td>
+            <td><code class="small text-break">{{ event.metadata }}</code></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-secondary py-4">No matching events.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if events.paginator.num_pages > 1 %}
+    <div class="card-footer">
+      <ul class="pagination m-0">
+        {% if events.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ events.previous_page_number }}&q={{ query|urlencode }}&action={{ action|urlencode }}&from={{ date_from }}&to={{ date_to }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ events.number }} of {{ events.paginator.num_pages }}</span></li>
+        {% if events.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ events.next_page_number }}&q={{ query|urlencode }}&action={{ action|urlencode }}&from={{ date_from }}&to={{ date_to }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

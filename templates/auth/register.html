@@ -1,6 +1,6 @@
 {% load static %}
 <!doctype html>
-<html lang="en" data-bs-theme-primary="teal">
+<html lang="en" data-bs-theme="light" data-bs-theme-primary="teal">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -8,14 +8,11 @@
   <title>Create account - HealthWise</title>
   <link rel="icon" href="{% static 'favicon-dev.ico' %}" type="image/x-icon" />
   <link href="{% static 'css/tabler.css' %}" rel="stylesheet" />
-  <link href="{% static 'css/tabler-vendors.css' %}" rel="stylesheet" />
   <link href="{% static 'css/app-theme.css' %}" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
-  <script src="{% static 'js/tabler-theme.js' %}"></script>
-
   <div class="auth-page">
     <div class="auth-shell">
 
@@ -152,6 +149,17 @@
             </div>
           </div>
 
+          <div class="form-check mb-3">
+            <input class="form-check-input {% if errors.consent %}is-invalid{% endif %}"
+                   type="checkbox" name="consent" id="id_consent"
+                   {% if form_data.consent %}checked{% endif %} required>
+            <label class="form-check-label small" for="id_consent">
+              I agree to the <a href="{% url 'privacy' %}" target="_blank" rel="noopener">privacy notice</a>
+              and understand that HealthWise is an educational screening tool, not a medical diagnosis.
+            </label>
+            {% if errors.consent %}<div class="invalid-feedback d-block">{{ errors.consent }}</div>{% endif %}
+          </div>
+
           <button type="submit" class="btn btn-primary w-100 auth-submit">
             <i class="fas fa-user-plus me-2"></i>Create account
           </button>
@@ -165,8 +173,6 @@
 
     </div>
   </div>
-
-  {% include 'theme/settings.html' %}
 
   <script src="{% static 'js/tabler.js' %}" defer></script>
   <script>

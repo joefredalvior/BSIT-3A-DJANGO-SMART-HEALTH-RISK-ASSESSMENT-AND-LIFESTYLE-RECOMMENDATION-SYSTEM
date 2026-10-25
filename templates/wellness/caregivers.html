@@ -1,0 +1,83 @@
+{% extends "theme/base.html" %}
+{% block title %}Caregivers{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Support</div>
+    <h2 class="page-title">Caregivers</h2>
+    <p class="dh-page-head-sub">Invite someone whose health reports you help monitor, or manage people who support you.</p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'wellness:caregiver_dashboard' %}" class="btn btn-outline-primary">Caregiver dashboard</a>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Invite someone I support</h3></div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <button class="btn btn-primary w-100" type="submit">Send invite</button>
+        </form>
+      </div>
+      <div class="card-footer text-secondary small">They must accept while signed in with the invited email address before you can view their reports.</div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">People I support</h3></div>
+      <div class="list-group list-group-flush">
+        {% for link in outgoing %}
+          <div class="list-group-item d-flex justify-content-between align-items-center gap-2">
+            <div>
+              <div class="fw-bold">{{ link.dependent_email }}</div>
+              <div class="text-secondary small">{{ link.relationship|default:"Caregiver" }} &middot; {{ link.get_status_display }}</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge {% if link.status == 'accepted' %}bg-success-lt{% elif link.status == 'pending' %}bg-warning-lt{% else %}bg-secondary-lt{% endif %}">{{ link.get_status_display }}</span>
+              {% if link.status != 'revoked' %}
+                <form method="post" action="{% url 'wellness:caregiver_revoke' link.pk %}">
+                  {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Revoke</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% empty %}
+          <div class="list-group-item text-secondary text-center py-4">No caregiver invites yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">People supporting me</h3></div>
+      <div class="list-group list-group-flush">
+        {% for link in incoming %}
+          <div class="list-group-item d-flex justify-content-between align-items-center gap-2">
+            <div>
+              <div class="fw-bold">{{ link.owner.get_full_name|default:link.owner.username }}</div>
+              <div class="text-secondary small">{{ link.relationship|default:"Caregiver" }} &middot; {{ link.get_status_display }}</div>
+            </div>
+            {% if link.status != 'revoked' %}
+              <form method="post" action="{% url 'wellness:caregiver_revoke' link.pk %}">
+                {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+              </form>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div class="list-group-item text-secondary text-center py-4">Nobody else has caregiver access.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -252,7 +252,10 @@
 
     fetch('{% url "info:info_save_ajax" %}', {
       method: 'POST',
-      headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value},
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
       body: formData
     })
     .then(response => response.json())
@@ -274,7 +277,10 @@
     if (!currentInfoId) return;
     fetch('/info/ajax/delete/' + currentInfoId + '/', {
       method: 'POST',
-      headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        'X-Requested-With': 'XMLHttpRequest'
+      }
     })
     .then(response => response.json())
     .then(data => {

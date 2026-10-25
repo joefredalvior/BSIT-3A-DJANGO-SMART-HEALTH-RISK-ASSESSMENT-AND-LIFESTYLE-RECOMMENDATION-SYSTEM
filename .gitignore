@@ -22,6 +22,8 @@ media/
 local_settings.py
 staticfiles/
 .env
+backups/
+.freebuff/
 
 # Tooling
 .pytest_cache/

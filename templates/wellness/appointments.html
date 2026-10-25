@@ -1,0 +1,86 @@
+{% extends "theme/base.html" %}
+{% block title %}Appointments{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Care</div>
+    <h2 class="page-title">Appointments</h2>
+    <p class="dh-page-head-sub">Request a clinic visit and review upcoming or past appointments.</p>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Request an appointment</h3></div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>{% endif %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <button class="btn btn-primary w-100" type="submit">Request appointment</button>
+        </form>
+      </div>
+      <div class="card-footer text-secondary small">Requests are confirmed by clinic staff. Choose a future date and time.</div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">Upcoming</h3></div>
+      <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+          <thead><tr><th>When</th><th>Clinician</th><th>Reason</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for item in upcoming %}
+              <tr>
+                <td>{{ item.scheduled_for|date:"d M Y H:i" }}<div class="text-secondary small">{{ item.duration_minutes }} min</div></td>
+                <td>{{ item.clinician.get_full_name|default:item.clinician.username|default:"First available" }}</td>
+                <td>{{ item.reason|default:"-" }}</td>
+                <td><span class="badge bg-blue-lt">{{ item.get_status_display }}</span></td>
+                <td class="text-end">
+                  {% if item.status != 'cancelled' %}
+                    <form method="post" action="{% url 'wellness:cancel_appointment' item.pk %}">
+                      {% csrf_token %}
+                      <button class="btn btn-sm btn-outline-danger" type="submit">Cancel</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-secondary py-4">No upcoming appointments.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Past appointments</h3></div>
+      <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+          <thead><tr><th>When</th><th>Clinician</th><th>Reason</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for item in past %}
+              <tr>
+                <td>{{ item.scheduled_for|date:"d M Y H:i" }}</td>
+                <td>{{ item.clinician.get_full_name|default:item.clinician.username|default:"-" }}</td>
+                <td>{{ item.reason|default:"-" }}</td>
+                <td><span class="badge bg-secondary-lt">{{ item.get_status_display }}</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-secondary py-4">No past appointments.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

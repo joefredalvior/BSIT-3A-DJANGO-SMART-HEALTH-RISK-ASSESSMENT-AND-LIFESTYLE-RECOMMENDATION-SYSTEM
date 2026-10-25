@@ -9,7 +9,7 @@
 </div>
 
 <div class="row row-cards mb-3">
-  <div class="col-sm-4">
+  <div class="col-sm-6 col-xl-3">
     <div class="card">
       <div class="card-body">
         <div class="dh-metric">
@@ -22,7 +22,7 @@
       </div>
     </div>
   </div>
-  <div class="col-sm-4">
+  <div class="col-sm-6 col-xl-3">
     <div class="card">
       <div class="card-body">
         <div class="dh-metric">
@@ -35,7 +35,7 @@
       </div>
     </div>
   </div>
-  <div class="col-sm-4">
+  <div class="col-sm-6 col-xl-3">
     <div class="card">
       <div class="card-body">
         <div class="dh-metric">
@@ -48,20 +48,62 @@
       </div>
     </div>
   </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric">
+          <span class="dh-metric-icon warning"><i class="fas fa-calendar-check"></i></span>
+          <div>
+            <div class="dh-metric-value text-warning">{{ follow_up_count }}</div>
+            <div class="dh-metric-label">Follow-ups flagged</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="card-title">Risk distribution</h3>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for level, count in risk_counts.items %}
+        <div class="col-6 col-md-3">
+          <div class="subheader">{{ level }} risk</div>
+          <div class="h2 mb-1">{{ count }}</div>
+          <div class="progress" style="height: 6px;">
+            <div class="progress-bar bg-{% if level == 'Low' %}success{% elif level == 'Moderate' %}warning{% elif level == 'High' %}danger{% else %}purple{% endif %}"
+                 style="width: {% if total %}{% widthratio count total 100 %}{% else %}0{% endif %}%"></div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="col-12 text-secondary small">No assessments to summarise yet.</div>
+      {% endfor %}
+    </div>
+  </div>
 </div>
 
 <div class="card">
   <div class="card-header">
     <h3 class="card-title">All patient reports</h3>
     <div class="card-actions">
-      <form method="get" class="d-flex gap-2">
+      <form method="get" class="d-flex gap-2 flex-wrap">
         <div class="input-group" style="max-width: 340px;">
           <span class="input-group-text"><i class="fas fa-search"></i></span>
           <input type="text" name="q" value="{{ query }}" class="form-control"
                  placeholder="Search patient by name or username...">
-          {% if query %}<a href="{% url 'users:clinician' %}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+          {% if query or risk_filter %}<a href="{% url 'users:clinician' %}" class="btn btn-outline-secondary">Clear</a>{% endif %}
           <button type="submit" class="btn btn-primary">Search</button>
         </div>
+        <select name="risk" class="form-select" style="max-width: 170px;" aria-label="Filter by risk level">
+          <option value="">All risk levels</option>
+          <option value="Low" {% if risk_filter == 'Low' %}selected{% endif %}>Low</option>
+          <option value="Moderate" {% if risk_filter == 'Moderate' %}selected{% endif %}>Moderate</option>
+          <option value="High" {% if risk_filter == 'High' %}selected{% endif %}>High</option>
+          <option value="Critical" {% if risk_filter == 'Critical' %}selected{% endif %}>Critical</option>
+        </select>
       </form>
     </div>
   </div>
@@ -87,6 +129,13 @@
                 <div>
                   <div class="fw-medium">{{ record.user.get_full_name|default:record.user.username }}</div>
                   <div class="text-secondary small">{{ record.user.username }}</div>
+                  {% for note in record.clinician_notes.all %}
+                    {% if note.follow_up_required %}
+                      <span class="badge bg-warning-lt mt-1">
+                        Follow-up{% if note.follow_up_date %} {{ note.follow_up_date|date:"d M" }}{% endif %}
+                      </span>
+                    {% endif %}
+                  {% endfor %}
                 </div>
               </div>
             </td>
@@ -126,17 +175,17 @@
       <ul class="pagination m-0 ms-auto">
         {% if assessments.has_previous %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ assessments.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">prev</a>
+            <a class="page-link" href="?page={{ assessments.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if risk_filter %}&risk={{ risk_filter }}{% endif %}">prev</a>
           </li>
         {% endif %}
         {% for num in assessments.paginator.page_range %}
           <li class="page-item {% if assessments.number == num %}active{% endif %}">
-            <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+            <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if risk_filter %}&risk={{ risk_filter }}{% endif %}">{{ num }}</a>
           </li>
         {% endfor %}
         {% if assessments.has_next %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ assessments.next_page_number }}{% if query %}&q={{ query }}{% endif %}">next</a>
+            <a class="page-link" href="?page={{ assessments.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if risk_filter %}&risk={{ risk_filter }}{% endif %}">next</a>
           </li>
         {% endif %}
       </ul>

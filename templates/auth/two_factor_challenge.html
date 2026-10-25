@@ -1,0 +1,29 @@
+{% extends "theme/base.html" %}
+{% block title %}Two-factor verification{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <span class="dh-metric-icon primary mx-auto mb-3"><i class="fas fa-shield-halved"></i></span>
+          <h2 class="mb-1">Two-factor verification</h2>
+          <p class="text-secondary mb-0">Enter the 6-digit code from your authenticator app, or use a backup code.</p>
+        </div>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="code">Authentication code</label>
+            <input class="form-control form-control-lg text-center" id="code" name="code" inputmode="numeric"
+                   autocomplete="one-time-code" autofocus required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Verify and sign in</button>
+        </form>
+        <div class="text-center mt-3">
+          <a href="{% url 'login' %}" class="text-secondary small">Use a different account</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

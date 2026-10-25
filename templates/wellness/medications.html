@@ -1,0 +1,96 @@
+{% extends "theme/base.html" %}
+{% block title %}Medications{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Wellness</div>
+    <h2 class="page-title">Medications</h2>
+    <p class="dh-page-head-sub">Keep a personal list and reminder times. Always follow your prescriber's instructions.</p>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Add medication</h3></div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>{% endif %}
+          {% for field in form %}
+            <div class="mb-3 {% if field.name == 'is_active' %}form-check{% endif %}">
+              {% if field.name == 'is_active' %}
+                {{ field }}
+                <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% else %}
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+              {% endif %}
+              {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <button class="btn btn-primary w-100" type="submit">Save medication</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">Active medications</h3></div>
+      <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+          <thead><tr><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Reminder</th><th>Dates</th><th></th></tr></thead>
+          <tbody>
+            {% for item in active %}
+              <tr>
+                <td class="fw-bold">{{ item.name }}<div class="text-secondary small">{{ item.notes }}</div></td>
+                <td>{{ item.dosage|default:"-" }}</td>
+                <td>{{ item.frequency|default:"-" }}</td>
+                <td>
+                  {% if item.reminder_time %}
+                    <span class="badge bg-blue-lt">{{ item.reminder_time|time:"H:i" }}</span>
+                    {% if item.reminder_time|time:"H:i" == now|time:"H:i" %}<span class="badge bg-red">Due now</span>{% endif %}
+                  {% else %}-{% endif %}
+                </td>
+                <td class="small">{{ item.start_date|default:"-" }}{% if item.end_date %} to {{ item.end_date }}{% endif %}</td>
+                <td class="text-end text-nowrap">
+                  <form method="post" action="{% url 'wellness:toggle_medication' item.pk %}" class="d-inline">
+                    {% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Pause</button>
+                  </form>
+                  <form method="post" action="{% url 'wellness:delete_medication' item.pk %}" class="d-inline">
+                    {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-center text-secondary py-4">No active medications.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if inactive %}
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Paused or finished</h3></div>
+        <div class="list-group list-group-flush">
+          {% for item in inactive %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <span><span class="fw-bold">{{ item.name }}</span> <span class="text-secondary small">{{ item.dosage }}</span></span>
+              <span class="d-flex gap-2">
+                <form method="post" action="{% url 'wellness:toggle_medication' item.pk %}">
+                  {% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">Resume</button>
+                </form>
+                <form method="post" action="{% url 'wellness:delete_medication' item.pk %}">
+                  {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                </form>
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

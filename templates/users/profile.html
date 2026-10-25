@@ -102,6 +102,44 @@
         </div>
       </section>
 
+      <section class="dh-section">
+        <div class="dh-section-head">
+          <span class="dh-section-icon"><i class="fas fa-bell"></i></span>
+          <div>
+            <h3 class="dh-section-title">Notifications</h3>
+            <p class="dh-section-sub">Choose whether we may email you assessment reminders.</p>
+          </div>
+        </div>
+        <div class="dh-section-body">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch"
+                   name="reminder_opt_in" id="id_reminder_opt_in"
+                   {% if profile.reminder_opt_in %}checked{% endif %}>
+            <label class="form-check-label" for="id_reminder_opt_in">
+              Email me a reminder when I have not completed an assessment recently.
+            </label>
+          </div>
+          <div class="row g-2 mt-2">
+            <div class="col-md-7">
+              <label class="form-label" for="id_phone_number">Mobile number for SMS reminders</label>
+              <input class="form-control" id="id_phone_number" name="phone_number"
+                     value="{{ profile.phone_number }}" placeholder="+63 9xx xxx xxxx">
+            </div>
+            <div class="col-md-5 d-flex align-items-end">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       name="sms_opt_in" id="id_sms_opt_in" {% if profile.sms_opt_in %}checked{% endif %}>
+                <label class="form-check-label" for="id_sms_opt_in">Send SMS reminders</label>
+              </div>
+            </div>
+          </div>
+          <p class="text-secondary small mt-2 mb-0">
+            You can change this at any time. Reminder emails are only sent to
+            verified addresses. SMS sending is disabled unless the site is configured with an SMS provider.
+          </p>
+        </div>
+      </section>
+
       <div class="dh-form-footer">
         <p class="text-secondary m-0 me-auto small">
           {% if age %}Current age: <strong>{{ age }}</strong>{% else %}Add a birthdate to calculate your age.{% endif %}
@@ -114,7 +152,7 @@
   </div>
 
   <div class="col-lg-4">
-    <div class="card">
+    <div class="card mb-3">
       <div class="card-body">
         <div class="dh-metric mb-3">
           <span class="dh-avatar" style="width:3rem;height:3rem;font-size:1rem;">{{ user.username|first|upper }}</span>
@@ -145,6 +183,87 @@
           <i class="fas fa-heart-pulse me-1"></i> Start an assessment
         </a>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Account &amp; privacy</h3>
+      </div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <div class="fw-medium">Email address</div>
+            <div class="text-secondary small">{{ user.email|default:"Not set" }}</div>
+          </div>
+          {% if profile.email_verified %}
+            <span class="badge bg-success-lt"><i class="fas fa-circle-check me-1"></i>Verified</span>
+          {% else %}
+            <span class="badge bg-warning-lt">Unverified</span>
+          {% endif %}
+        </div>
+        {% if not profile.email_verified %}
+          <form method="post" action="{% url 'resend_verification' %}" class="mb-3">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+              <i class="fas fa-paper-plane me-1"></i> Resend verification email
+            </button>
+          </form>
+        {% endif %}
+        <a href="{% url 'password_change' %}" class="btn btn-sm w-100 mb-2">
+          <i class="fas fa-key me-1"></i> Change password
+        </a>
+        <a href="{% url 'users:security' %}" class="btn btn-sm w-100 mb-2">
+          <i class="fas fa-shield-halved me-1"></i> Security &amp; devices
+        </a>
+        <a href="{% url 'account_export' %}" class="btn btn-sm w-100 mb-2">
+          <i class="fas fa-download me-1"></i> Download my data
+        </a>
+        <a href="{% url 'privacy' %}" class="btn btn-sm w-100" target="_blank" rel="noopener">
+          <i class="fas fa-shield-heart me-1"></i> Privacy notice
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-danger mt-3">
+  <div class="card-header">
+    <h3 class="card-title text-danger">
+      <i class="fas fa-triangle-exclamation me-2"></i>Danger zone
+    </h3>
+  </div>
+  <div class="card-body">
+    <div class="row align-items-center g-3">
+      <div class="col-md">
+        <div class="fw-bold">Delete my account</div>
+        <p class="text-secondary small mb-0">
+          Permanently removes your account, profile, assessments, goals, and related
+          records. This cannot be undone. Export your data first if you want a copy.
+        </p>
+      </div>
+      <div class="col-md-auto">
+        <button type="button" class="btn btn-danger" data-bs-toggle="collapse"
+                data-bs-target="#delete-account-form" aria-expanded="false"
+                aria-controls="delete-account-form">
+          Delete account
+        </button>
+      </div>
+    </div>
+    <div class="collapse mt-3" id="delete-account-form">
+      <form method="post" action="{% url 'account_delete' %}"
+            onsubmit="return confirm('Permanently delete your account and all health data? This cannot be undone.');">
+        {% csrf_token %}
+        <label class="form-label" for="delete_password">Confirm your password</label>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <input type="password" class="form-control" id="delete_password"
+                   name="password" autocomplete="current-password" required>
+          </div>
+          <div class="col-md-auto">
+            <button type="submit" class="btn btn-danger">Permanently delete</button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>

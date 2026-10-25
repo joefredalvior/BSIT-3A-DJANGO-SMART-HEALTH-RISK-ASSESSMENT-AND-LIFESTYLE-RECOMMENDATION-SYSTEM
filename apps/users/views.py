@@ -3,25 +3,35 @@ from datetime import date
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib import messages
+from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.sessions.models import Session
 from django.views.decorators.http import require_POST, require_http_methods
 from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.db.models import Avg, Q
+from django.db.models import Q
+from django.utils import timezone
 
+from apps.core.models import UserSession
 from apps.health import engine
-from apps.health.models import Assessment
+from apps.health.services import award_achievements
 
+from .helpers import qr_data_uri as _qr_data_uri
 from .models import UserProfile
+from .two_factor import (
+    confirm,
+    consume_backup_code,
+    disable,
+    get_settings,
+    provisioning_uri,
+    start_setup,
+    verify_code,
+)
 
 
 def _is_superuser(user):
     return user.is_superuser
-
-
-def _is_clinician(user):
-    return user.is_staff or user.is_superuser
 
 
 # PAGE
@@ -219,7 +229,13 @@ def profile_view(request):
             profile.activity_level = form['activity_level']
             profile.family_history = form['family_history']
             profile.conditions = form['conditions']
+            profile.reminder_opt_in = request.POST.get('reminder_opt_in') == 'on'
+            profile.phone_number = request.POST.get('phone_number', '').strip()[:30]
+            profile.sms_opt_in = request.POST.get('sms_opt_in') == 'on'
             profile.save()
+            award_achievements(request.user)
+            from apps.core.security import log_event
+            log_event(request, 'profile.updated')
             messages.success(request, 'Profile saved. New assessments will be prefilled.')
             return redirect('users:profile')
 
@@ -235,30 +251,81 @@ def profile_view(request):
     })
 
 
-# CLINICIAN DASHBOARD
 @login_required(login_url='login')
-@user_passes_test(_is_clinician, login_url='dashboard')
-def clinician_dashboard(request):
-    query = request.GET.get('q', '').strip()
-    assessments = Assessment.objects.select_related('user').all()
-
-    if query:
-        assessments = assessments.filter(
-            Q(user__username__icontains=query) |
-            Q(user__first_name__icontains=query) |
-            Q(user__last_name__icontains=query)
-        )
-
-    stats = assessments.aggregate(average=Avg('risk_score'))
-    high_risk_count = assessments.filter(risk_level__in=['High', 'Critical']).count()
-
-    paginator = Paginator(assessments, 20)
-    page = paginator.get_page(request.GET.get('page', 1))
-
-    return render(request, 'users/clinician.html', {
-        'assessments': page,
-        'query': query,
-        'total': assessments.count(),
-        'average_score': int(round(stats['average'])) if stats['average'] is not None else None,
-        'high_risk_count': high_risk_count,
+def account_security(request):
+    active_keys = Session.objects.filter(
+        expire_date__gt=timezone.now(),
+    ).values_list('session_key', flat=True)
+    sessions = request.user.tracked_sessions.filter(
+        ended_at__isnull=True, session_key__in=active_keys,
+    )
+    return render(request, 'users/security.html', {
+        'sessions': sessions,
+        'current_session_key': request.session.session_key,
+        'two_factor': getattr(request.user, 'two_factor', None),
     })
+
+
+@login_required(login_url='login')
+@require_POST
+def end_session(request, pk):
+    tracked = get_object_or_404(UserSession, pk=pk, user=request.user)
+    is_current = tracked.session_key == request.session.session_key
+    Session.objects.filter(session_key=tracked.session_key).delete()
+    tracked.ended_at = timezone.now()
+    tracked.save(update_fields=['ended_at'])
+    if is_current:
+        logout(request)
+        return redirect('login')
+    messages.success(request, 'Session signed out.')
+    return redirect('users:security')
+
+
+@login_required(login_url='login')
+@require_http_methods(['GET', 'POST'])
+def two_factor_setup(request):
+    settings_obj = get_settings(request.user)
+    if settings_obj.enabled:
+        return render(request, 'users/two_factor.html', {
+            'enabled': True,
+            'settings_obj': settings_obj,
+        })
+
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip()
+        if verify_code(settings_obj.secret, code):
+            confirm(settings_obj)
+            messages.success(request, 'Two-factor authentication is now enabled.')
+            return render(request, 'users/two_factor.html', {
+                'enabled': True,
+                'settings_obj': settings_obj,
+                'backup_codes': settings_obj.backup_codes,
+            })
+        messages.error(request, 'That code did not match. Check your authenticator app.')
+
+    if not settings_obj.secret:
+        settings_obj = start_setup(request.user)
+    uri = provisioning_uri(request.user, settings_obj.secret)
+    return render(request, 'users/two_factor.html', {
+        'enabled': False,
+        'settings_obj': settings_obj,
+        'secret': settings_obj.secret,
+        'qr': _qr_data_uri(uri),
+        'uri': uri,
+    })
+
+
+@login_required(login_url='login')
+@require_POST
+def two_factor_disable(request):
+    settings_obj = get_settings(request.user)
+    password = request.POST.get('password', '')
+    code = request.POST.get('code', '').strip()
+    if not request.user.check_password(password):
+        messages.error(request, 'Password is incorrect.')
+    elif verify_code(settings_obj.secret, code) or consume_backup_code(settings_obj, code):
+        disable(settings_obj)
+        messages.success(request, 'Two-factor authentication disabled.')
+    else:
+        messages.error(request, 'Enter a valid authenticator or backup code.')
+    return redirect('users:two_factor_setup')

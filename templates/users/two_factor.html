@@ -1,0 +1,100 @@
+{% extends "theme/base.html" %}
+{% block title %}Two-factor authentication{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Account security</div>
+    <h2 class="page-title">Two-factor authentication</h2>
+    <p class="dh-page-head-sub">Protect your health information with an authenticator app.</p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'users:security' %}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left me-1"></i> Back to security
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    {% if enabled %}
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <span class="dh-metric-icon success"><i class="fas fa-check"></i></span>
+            <div>
+              <h3 class="mb-1">Two-factor authentication is enabled</h3>
+              <p class="text-secondary mb-0">Your account now asks for a code at sign-in.</p>
+            </div>
+          </div>
+
+          {% if backup_codes %}
+            <div class="alert alert-warning">
+              <h4 class="alert-title">Save your backup codes now</h4>
+              <p class="small">Each code can be used once if you lose access to your authenticator. They will not be shown again.</p>
+              <div class="row row-cols-2 row-cols-md-4 g-2">
+                {% for code in backup_codes %}
+                  <div class="col"><code class="d-block bg-white border rounded p-2 text-center">{{ code }}</code></div>
+                {% endfor %}
+              </div>
+            </div>
+          {% else %}
+            <div class="alert alert-info small">
+              Backup codes were generated when 2FA was enabled. If you lost them, disable and set up 2FA again.
+            </div>
+          {% endif %}
+
+          <form method="post" action="{% url 'users:two_factor_disable' %}" class="border-top pt-3 mt-3">
+            {% csrf_token %}
+            <h4>Disable two-factor authentication</h4>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <input class="form-control" type="password" name="password" placeholder="Current password" required>
+              </div>
+              <div class="col-md-4">
+                <input class="form-control" name="code" placeholder="Authenticator or backup code" required>
+              </div>
+              <div class="col-md-4">
+                <button class="btn btn-outline-danger w-100" type="submit">Disable 2FA</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <div class="card">
+        <div class="card-body">
+          <h3>1. Scan this QR code</h3>
+          <p class="text-secondary">Use Google Authenticator, Microsoft Authenticator, 1Password, or another TOTP app.</p>
+          <div class="row align-items-center g-4">
+            <div class="col-md-5 text-center">
+              {% if qr %}
+                <img src="{{ qr }}" alt="QR code for authenticator setup" class="img-fluid border rounded p-2 bg-white" style="max-width: 220px;">
+              {% else %}
+                <div class="alert alert-warning small">QR code unavailable. Enter the setup key manually.</div>
+              {% endif %}
+            </div>
+            <div class="col-md-7">
+              <label class="form-label">Manual setup key</label>
+              <code class="d-block bg-light border rounded p-3 text-break">{{ secret }}</code>
+              <div class="text-secondary small mt-2">Account: {{ user.username }} &middot; Issuer: HealthWise</div>
+            </div>
+          </div>
+
+          <hr class="my-4">
+          <h3>2. Confirm the 6-digit code</h3>
+          <form method="post" class="row g-2 align-items-end">
+            {% csrf_token %}
+            <div class="col-md-6">
+              <label class="form-label" for="code">Code from your app</label>
+              <input class="form-control" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" required>
+            </div>
+            <div class="col-md-6">
+              <button class="btn btn-primary w-100" type="submit">Enable two-factor authentication</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

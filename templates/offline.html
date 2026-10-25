@@ -1,0 +1,12 @@
+{% extends "theme/base.html" %}
+{% block title %}Offline{% endblock %}
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 60vh;">
+  <div class="col-md-6 text-center">
+    <span class="dh-metric-icon warning mx-auto mb-3"><i class="fas fa-wifi"></i></span>
+    <h1>You are offline</h1>
+    <p class="text-secondary">HealthWise could not reach the internet. Pages you already visited may still be available.</p>
+    <a href="/home/" class="btn btn-primary mt-2">Try again</a>
+  </div>
+</div>
+{% endblock %}

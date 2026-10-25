@@ -1,0 +1,14 @@
+Hello {{ user.first_name|default:user.username }},
+
+Your HealthWise report from {{ record.created_at|date:"d M Y" }} is ready.
+
+Risk score: {{ record.risk_score }}/100 ({{ record.risk_level }} risk)
+BMI: {{ record.bmi|default:"-" }} ({{ record.bmi_category|default:"not calculated" }})
+Blood pressure: {{ record.systolic }}/{{ record.diastolic }}
+
+View the full report:
+{{ protocol }}://{{ domain }}{% url 'health:report' record.pk %}
+
+This is an educational screening aid, not a medical diagnosis.
+
+HealthWise

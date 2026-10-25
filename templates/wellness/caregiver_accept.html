@@ -1,0 +1,29 @@
+{% extends "theme/base.html" %}
+{% block title %}Caregiver invite{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body text-center p-4">
+        <span class="dh-metric-icon primary mx-auto mb-3"><i class="fas fa-people-roof"></i></span>
+        <h2>Caregiver invitation</h2>
+        <p class="text-secondary">
+          <strong>{{ link.owner.get_full_name|default:link.owner.username }}</strong>
+          invited you to help monitor their health reports as
+          {{ link.relationship|default:"a caregiver" }}.
+        </p>
+        {% if not email_matches %}
+          <div class="alert alert-warning text-start">
+            This invite was sent to {{ link.dependent_email }}. Sign in with that email address to accept it.
+          </div>
+        {% endif %}
+        <form method="post">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit" {% if not email_matches %}disabled{% endif %}>Accept caregiver access</button>
+          <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Not now</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

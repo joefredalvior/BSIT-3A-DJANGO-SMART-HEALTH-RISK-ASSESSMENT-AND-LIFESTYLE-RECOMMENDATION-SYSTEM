@@ -26,100 +26,166 @@
 
     <div class="collapse navbar-collapse" id="sidebar-menu">
       <ul class="navbar-nav pt-lg-2 py-lg-2">
-
         <li class="nav-item">
-          <span class="dh-nav-section">
-            Menu
-          </span>
+          <span class="dh-nav-section">{{ UI.menu }}</span>
         </li>
+
         <li class="nav-item mb-1">
           <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="fa fa-dashboard"></i>
-            </span>
-            <span class="nav-link-title">Dashboard</span>
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="fa fa-dashboard"></i></span>
+            <span class="nav-link-title">{{ UI.dashboard }}</span>
           </a>
         </li>
 
         <li class="nav-item mb-1">
           <a class="nav-link {% if request.resolver_match.app_name == 'health' and request.resolver_match.url_name == 'assessment_form' %}active{% endif %}" href="{% url 'health:assessment_form' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-heart-pulse"></i>
-            </span>
-            <span class="nav-link-title">Health Assessment</span>
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-heart-pulse"></i></span>
+            <span class="nav-link-title">{{ UI.assessment }}</span>
           </a>
         </li>
 
         <li class="nav-item mb-1">
           <a class="nav-link {% if request.resolver_match.app_name == 'health' and request.resolver_match.url_name == 'history' %}active{% endif %}" href="{% url 'health:history' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-clock-rotate-left"></i>
-            </span>
-            <span class="nav-link-title">My Health History</span>
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-clock-rotate-left"></i></span>
+            <span class="nav-link-title">{{ UI.history }}</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'health' and request.resolver_match.url_name == 'goals' %}active{% endif %}" href="{% url 'health:goals' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-bullseye"></i></span>
+            <span class="nav-link-title">{{ UI.goals }}</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'vitals' %}active{% endif %}" href="{% url 'wellness:vitals' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-chart-line"></i></span>
+            <span class="nav-link-title">{{ UI.vitals }}</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'screenings' %}active{% endif %}" href="{% url 'wellness:screenings' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-brain"></i></span>
+            <span class="nav-link-title">{{ UI.screenings }}</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'medications' %}active{% endif %}" href="{% url 'wellness:medications' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-pills"></i></span>
+            <span class="nav-link-title">{{ UI.medications }}</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'appointments' %}active{% endif %}" href="{% url 'wellness:appointments' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-calendar-check"></i></span>
+            <span class="nav-link-title">{{ UI.appointments }}</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'inbox' %}active{% endif %}" href="{% url 'wellness:inbox' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-envelope"></i></span>
+            <span class="nav-link-title">{{ UI.messages }}</span>
+            {% if UNREAD_MESSAGES %}<span class="badge bg-red ms-auto">{{ UNREAD_MESSAGES }}</span>{% endif %}
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'clinics' %}active{% endif %}" href="{% url 'wellness:clinics' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-hospital"></i></span>
+            <span class="nav-link-title">{{ UI.clinics }}</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'caregivers' %}active{% endif %}" href="{% url 'wellness:caregivers' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-people-roof"></i></span>
+            <span class="nav-link-title">{{ UI.caregivers }}</span>
+          </a>
+        </li>
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'achievements' %}active{% endif %}" href="{% url 'wellness:achievements' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-award"></i></span>
+            <span class="nav-link-title">{{ UI.achievements }}</span>
           </a>
         </li>
 
         <li class="nav-item mb-1">
           <a class="nav-link {% if request.resolver_match.app_name == 'users' and request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'users:profile' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-user-circle"></i>
-            </span>
-            <span class="nav-link-title">My Profile</span>
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-user-circle"></i></span>
+            <span class="nav-link-title">{{ UI.profile }}</span>
           </a>
         </li>
 
         <li class="nav-item mb-1">
           <a class="nav-link {% if request.resolver_match.app_name == 'info' and request.resolver_match.url_name == 'guide' %}active{% endif %}" href="{% url 'info:guide' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-book-medical"></i>
-            </span>
-            <span class="nav-link-title">Health Guide</span>
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-book-medical"></i></span>
+            <span class="nav-link-title">{{ UI.guide }}</span>
           </a>
         </li>
 
         {% if user.is_staff or user.is_superuser %}
-        <li class="nav-item mb-1">
-          <a class="nav-link {% if request.resolver_match.app_name == 'users' and request.resolver_match.url_name == 'clinician' %}active{% endif %}" href="{% url 'users:clinician' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-stethoscope"></i>
-            </span>
-            <span class="nav-link-title">Patient Assessments</span>
-          </a>
-        </li>
+          <li class="nav-item">
+            <span class="dh-nav-section">Clinic</span>
+          </li>
+          <li class="nav-item mb-1">
+            <a class="nav-link {% if request.resolver_match.app_name == 'users' and request.resolver_match.url_name == 'clinician' %}active{% endif %}" href="{% url 'users:clinician' %}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-stethoscope"></i></span>
+              <span class="nav-link-title">{{ UI.clinician }}</span>
+            </a>
+          </li>
+          <li class="nav-item mb-1">
+            <a class="nav-link {% if request.resolver_match.app_name == 'wellness' and request.resolver_match.url_name == 'clinician_appointments' %}active{% endif %}" href="{% url 'wellness:clinician_appointments' %}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-calendar-days"></i></span>
+              <span class="nav-link-title">Clinic appointments</span>
+            </a>
+          </li>
+          <li class="nav-item mb-1">
+            <a class="nav-link {% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}" href="{% url 'audit_log' %}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-shield-halved"></i></span>
+              <span class="nav-link-title">{{ UI.audit }}</span>
+            </a>
+          </li>
         {% endif %}
 
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'info' and request.resolver_match.url_name == 'info_list' %}active{% endif %}" href="{% url 'info:info_list' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-address-card"></i>
-            </span>
-            <span class="nav-link-title">My Information</span>
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-address-card"></i></span>
+            <span class="nav-link-title">{{ UI.info }}</span>
           </a>
         </li>
 
         {% if user.is_superuser %}
-        <li class="nav-item">
-          <span class="dh-nav-section">Administration</span>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'users' and request.resolver_match.url_name == 'user_list' %}active{% endif %}" href="{% url 'users:user_list' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-users"></i>
-            </span>
-            <span class="nav-link-title">User Management</span>
-          </a>
-        </li>
+          <li class="nav-item">
+            <span class="dh-nav-section">{{ UI.administration }}</span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.app_name == 'users' and request.resolver_match.url_name == 'user_list' %}active{% endif %}" href="{% url 'users:user_list' %}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-users"></i></span>
+              <span class="nav-link-title">{{ UI.users }}</span>
+            </a>
+          </li>
         {% endif %}
 
-        {% if user.is_authenticated %}
-        <li class="nav-item d-lg-none">
-          <a class="nav-link" href="{% url 'logout' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-sign-out-alt"></i>
-            </span>
-            <span class="nav-link-title">Logout</span>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'set_language' OTHER_LANG %}?next={{ request.path|urlencode }}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-language"></i></span>
+            <span class="nav-link-title">{{ UI.language }}: {{ OTHER_LANG_NAME }}</span>
           </a>
         </li>
+
+        {% if user.is_authenticated %}
+          <li class="nav-item d-lg-none">
+            <a class="nav-link" href="{% url 'logout' %}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="nav-icon fas fa-sign-out-alt"></i></span>
+              <span class="nav-link-title">{{ UI.logout }}</span>
+            </a>
+          </li>
         {% endif %}
 
         <li class="nav-item mt-auto dh-nav-sidebar-footer">
@@ -134,13 +200,12 @@
               </span>
             </a>
             {% if user.is_authenticated %}
-            <a href="{% url 'logout' %}" class="dh-user-logout" title="Logout">
-              <i class="fas fa-sign-out-alt"></i>
-            </a>
+              <a href="{% url 'logout' %}" class="dh-user-logout" title="{{ UI.logout }}">
+                <i class="fas fa-sign-out-alt"></i>
+              </a>
             {% endif %}
           </div>
         </li>
-
       </ul>
     </div>
   </div>

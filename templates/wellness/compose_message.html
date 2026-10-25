@@ -1,0 +1,33 @@
+{% extends "theme/base.html" %}
+{% block title %}New message{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Messages</div>
+    <h2 class="page-title">New secure message</h2>
+    <p class="dh-page-head-sub">Only share information you are comfortable discussing with this recipient.</p>
+  </div>
+  <div class="btn-list"><a href="{% url 'wellness:inbox' %}" class="btn btn-outline-secondary">Back to inbox</a></div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>{% endif %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane me-1"></i> Send message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

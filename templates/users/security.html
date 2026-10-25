@@ -1,0 +1,77 @@
+{% extends "theme/base.html" %}
+{% block title %}Account security{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Account</div>
+    <h2 class="page-title">Security</h2>
+    <p class="dh-page-head-sub">Manage two-factor authentication and signed-in devices.</p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'users:two_factor_setup' %}" class="btn btn-primary">
+      <i class="fas fa-shield-halved me-1"></i>
+      {% if two_factor and two_factor.enabled %}Manage 2FA{% else %}Set up 2FA{% endif %}
+    </a>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+          <span class="dh-metric-icon {% if two_factor and two_factor.enabled %}success{% else %}warning{% endif %}">
+            <i class="fas fa-shield-halved"></i>
+          </span>
+          <div>
+            <div class="fw-bold">Two-factor authentication</div>
+            <div class="text-secondary small">
+              {% if two_factor and two_factor.enabled %}Enabled{% else %}Not enabled{% endif %}
+            </div>
+          </div>
+        </div>
+        <p class="text-secondary small mt-3 mb-0">
+          Add a time-based one-time password from an authenticator app for an extra layer of protection.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Signed-in devices</h3>
+        <div class="card-actions text-secondary small">{{ sessions|length }} active</div>
+      </div>
+      <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+          <thead><tr><th>Device</th><th>IP address</th><th>Signed in</th><th>Last seen</th><th></th></tr></thead>
+          <tbody>
+            {% for item in sessions %}
+              <tr>
+                <td>
+                  <div class="text-truncate" style="max-width: 260px;">{{ item.user_agent|default:"Unknown device" }}</div>
+                  {% if item.session_key == current_session_key %}<span class="badge bg-teal-lt">This device</span>{% endif %}
+                </td>
+                <td>{{ item.ip_address|default:"-" }}</td>
+                <td>{{ item.created_at|date:"d M Y H:i" }}</td>
+                <td>{{ item.last_seen|timesince }} ago</td>
+                <td class="text-end">
+                  <form method="post" action="{% url 'users:end_session' item.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger" type="submit">
+                      {% if item.session_key == current_session_key %}Sign out{% else %}Revoke{% endif %}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-secondary py-4">No active sessions recorded yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

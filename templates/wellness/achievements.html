@@ -1,0 +1,32 @@
+{% extends "theme/base.html" %}
+{% block title %}Achievements{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Progress</div>
+    <h2 class="page-title">Achievements</h2>
+    <p class="dh-page-head-sub">{{ earned_count }} of {{ badges|length }} milestones unlocked by tracking your health.</p>
+  </div>
+</div>
+
+<div class="row row-cards">
+  {% for item in badges %}
+    <div class="col-sm-6 col-lg-4">
+      <div class="card h-100 {% if not item.earned %}opacity-50{% endif %}">
+        <div class="card-body text-center">
+          <span class="dh-metric-icon {% if item.earned %}warning{% else %}secondary{% endif %} mx-auto mb-3">
+            <i class="fas {{ item.icon }}"></i>
+          </span>
+          <h3 class="mb-1">{{ item.title }}</h3>
+          <p class="text-secondary small">{{ item.description }}</p>
+          {% if item.earned %}
+            <span class="badge bg-success-lt">Earned {{ item.awarded_at|date:"d M Y" }}</span>
+          {% else %}
+            <span class="badge bg-secondary-lt">Not yet earned</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

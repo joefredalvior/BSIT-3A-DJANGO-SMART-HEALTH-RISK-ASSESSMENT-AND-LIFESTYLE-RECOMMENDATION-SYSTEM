@@ -177,6 +177,67 @@
       </div>
     </div>
 
+    {% if goals %}
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-bullseye text-primary me-2"></i>Your health goals
+            </h3>
+            <div class="card-actions">
+              <a href="{% url 'health:goals' %}" class="btn btn-sm">Manage goals</a>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              {% for goal in goals %}
+                <div class="col-sm-6 col-xl-3">
+                  <div class="border rounded p-3 h-100">
+                    <div class="fw-bold">{{ goal.display_label }}</div>
+                    <div class="text-secondary small">
+                      Target {{ goal.target_value }} {{ goal.unit }}
+                    </div>
+                    {% if goal.due_date %}
+                      <div class="text-secondary small mt-1">
+                        <i class="fas fa-calendar me-1"></i>{{ goal.due_date|date:"d M Y" }}
+                      </div>
+    {% endif %}
+
+    {% if achievements %}
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-award text-warning me-2"></i>Recent achievements</h3>
+            <div class="card-actions"><a href="{% url 'wellness:achievements' %}" class="btn btn-sm">View all</a></div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              {% for item in achievements %}
+                <div class="col-sm-6 col-xl-3">
+                  <div class="border rounded p-3 h-100 d-flex align-items-center gap-2">
+                    <span class="dh-metric-icon warning"><i class="fas {{ item.icon|default:'fa-award' }}"></i></span>
+                    <div>
+                      <div class="fw-bold">{{ item.title }}</div>
+                      <div class="text-secondary small">{{ item.description }}</div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
     <div class="col-12">
       <div class="card">
         <div class="card-header">

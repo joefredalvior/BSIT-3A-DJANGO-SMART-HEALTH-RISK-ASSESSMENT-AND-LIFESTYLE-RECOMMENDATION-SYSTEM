@@ -1,0 +1,22 @@
+{% extends "theme/base.html" %}
+{% block title %}Security check failed{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-body text-center">
+        <span class="dh-metric-icon danger mx-auto mb-3"><i class="fas fa-shield-halved"></i></span>
+        <h2>Security check failed</h2>
+        <p class="text-secondary">
+          This form could not be verified because the security token was missing or expired.
+          No changes were made. Refresh the page and try again.
+        </p>
+        <div class="btn-list justify-content-center">
+          <a href="{% url 'dashboard' %}" class="btn btn-primary">Return to dashboard</a>
+          <a href="{% url 'login' %}" class="btn">Sign in again</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "theme/base.html" %}
+{% block title %}Caregiver dashboard{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Support</div>
+    <h2 class="page-title">Caregiver dashboard</h2>
+    <p class="dh-page-head-sub">People who accepted your invite and their recent assessments.</p>
+  </div>
+  <div class="btn-list"><a href="{% url 'wellness:caregivers' %}" class="btn btn-outline-secondary">Manage caregivers</a></div>
+</div>
+
+{% for item in dependents %}
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title">{{ item.user.get_full_name|default:item.user.username }}</h3>
+      <div class="card-actions text-secondary small">{{ item.link.relationship|default:"Caregiver" }}</div>
+    </div>
+    <div class="table-responsive">
+      <table class="table card-table table-vcenter">
+        <thead><tr><th>Date</th><th>Risk score</th><th>Level</th><th>BMI</th><th></th></tr></thead>
+        <tbody>
+          {% for record in item.assessments %}
+            <tr>
+              <td>{{ record.created_at|date:"d M Y H:i" }}</td>
+              <td>{{ record.risk_score }}/100</td>
+              <td><span class="badge bg-{{ record.level_colour|default:'secondary' }}-lt">{{ record.risk_level }}</span></td>
+              <td>{{ record.bmi|default:"-" }}</td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'wellness:caregiver_report' item.link.pk record.pk %}">View report</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-secondary py-4">No assessments yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% empty %}
+  <div class="card"><div class="card-body text-center py-5">
+    <p class="text-secondary mb-3">Nobody has accepted a caregiver invite yet.</p>
+    <a href="{% url 'wellness:caregivers' %}" class="btn btn-primary">Invite a caregiver</a>
+  </div></div>
+{% endfor %}
+{% endblock %}

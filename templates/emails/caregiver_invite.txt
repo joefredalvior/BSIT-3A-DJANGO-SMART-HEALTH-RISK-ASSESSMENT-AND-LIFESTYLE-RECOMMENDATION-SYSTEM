@@ -1,0 +1,13 @@
+Hello {{ link.dependent_email }},
+
+{{ owner.get_full_name|default:owner.username }} has invited you to be a caregiver on HealthWise.
+
+As a caregiver, you can view their recent health risk reports and support them with healthy lifestyle changes. You will not be able to change their account or see their private messages.
+
+Accept the invitation (sign in with this email address):
+{{ accept_url }}
+
+If you were not expecting this invitation, you can ignore this email.
+
+HealthWise
+This message is not medical advice. In an emergency, contact local emergency services.

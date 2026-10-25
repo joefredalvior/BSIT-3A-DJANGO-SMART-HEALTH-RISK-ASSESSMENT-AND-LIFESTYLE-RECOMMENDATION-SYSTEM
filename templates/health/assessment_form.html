@@ -21,10 +21,17 @@
 
 <div class="row row-cards">
   <div class="col-lg-8">
-    <form method="post" action="" novalidate>
+    <form method="post" action="" novalidate id="assessment-form">
       {% csrf_token %}
 
-      <div class="dh-form-steps">
+      <div class="dh-draft-bar" id="draft-bar" hidden>
+        <i class="fas fa-floppy-disk text-primary"></i>
+        <span>You have an unsaved draft from earlier.</span>
+        <button type="button" class="btn btn-sm btn-primary" id="draft-restore">Restore</button>
+        <button type="button" class="btn btn-sm btn-ghost-secondary" id="draft-discard">Discard</button>
+      </div>
+
+      <div class="dh-form-steps" aria-label="Assessment sections">
         <span class="dh-form-step active"><span>1</span>About you</span>
         <span class="dh-form-step"><span>2</span>Vitals</span>
         <span class="dh-form-step"><span>3</span>Lifestyle</span>
@@ -226,8 +233,9 @@
         <p class="text-secondary m-0 me-auto small">
           <i class="fas fa-shield-heart me-1"></i>
           This tool provides general guidance and is not a medical diagnosis.
+          <span class="dh-save-state" id="draft-status" aria-live="polite"></span>
         </p>
-        <button type="submit" class="btn btn-primary btn-lg">
+        <button type="submit" class="btn btn-primary btn-lg" id="assessment-submit">
           <i class="fas fa-heart-pulse me-1"></i> Get my health report
         </button>
       </div>
@@ -267,4 +275,99 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ errors|json_script:"assessment-errors" }}
+<script>
+(function () {
+  const form = document.getElementById('assessment-form');
+  if (!form) return;
+
+  // Inline field errors (progressive enhancement; the summary stays visible).
+  try {
+    const errors = JSON.parse(document.getElementById('assessment-errors').textContent || '{}');
+    Object.entries(errors).forEach(function ([name, message]) {
+      const field = form.querySelector('[name="' + name + '"]');
+      if (!field) return;
+      field.classList.add('is-invalid');
+      field.setAttribute('aria-invalid', 'true');
+      const box = document.createElement('div');
+      box.className = 'invalid-feedback d-block';
+      box.textContent = message;
+      field.insertAdjacentElement('afterend', box);
+    });
+  } catch (error) { /* ignore */ }
+
+  // Draft autosave.
+  const key = 'healthwise:draft:{{ request.user.pk }}';
+  const bar = document.getElementById('draft-bar');
+  const status = document.getElementById('draft-status');
+  const submit = document.getElementById('assessment-submit');
+  let timer = null;
+  let dirty = false;
+  let submitting = false;
+
+  function readDraft() {
+    try { return JSON.parse(localStorage.getItem(key) || 'null'); }
+    catch (error) { return null; }
+  }
+
+  function collect() {
+    const data = {};
+    new FormData(form).forEach(function (value, name) {
+      if (name !== 'csrfmiddlewaretoken') data[name] = value;
+    });
+    return data;
+  }
+
+  function saveDraft() {
+    try {
+      localStorage.setItem(key, JSON.stringify(collect()));
+      if (status) status.textContent = 'Draft saved on this device.';
+    } catch (error) { /* storage may be unavailable */ }
+  }
+
+  const draft = readDraft();
+  if (draft && bar) bar.hidden = false;
+
+  if (bar) {
+    document.getElementById('draft-restore').addEventListener('click', function () {
+      Object.entries(draft || {}).forEach(function ([name, value]) {
+        const field = form.querySelector('[name="' + name + '"]');
+        if (field) field.value = value;
+      });
+      bar.hidden = true;
+      if (status) status.textContent = 'Draft restored.';
+    });
+    document.getElementById('draft-discard').addEventListener('click', function () {
+      localStorage.removeItem(key);
+      bar.hidden = true;
+      if (status) status.textContent = 'Draft discarded.';
+    });
+  }
+
+  form.addEventListener('input', function () {
+    dirty = true;
+    clearTimeout(timer);
+    timer = setTimeout(saveDraft, 700);
+  });
+
+  form.addEventListener('submit', function () {
+    submitting = true;
+    localStorage.removeItem(key);
+    if (submit) {
+      submit.classList.add('is-loading');
+      submit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calculating your report...';
+    }
+  });
+
+  window.addEventListener('beforeunload', function (event) {
+    if (dirty && !submitting) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  });
+})();
+</script>
 {% endblock %}

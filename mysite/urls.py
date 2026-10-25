@@ -25,6 +25,7 @@ urlpatterns = [
     path('users/', include('apps.users.urls')),
     path('info/', include('apps.info.urls')),
     path('health/', include('apps.health.urls')),
+    path('wellness/', include('apps.wellness.urls')),
 ]
 
 if settings.DEBUG:

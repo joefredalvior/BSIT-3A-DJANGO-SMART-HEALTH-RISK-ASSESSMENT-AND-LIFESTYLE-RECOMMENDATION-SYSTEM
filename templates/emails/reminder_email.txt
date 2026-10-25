@@ -1,0 +1,10 @@
+Hello {{ user.first_name|default:user.username }},
+
+This is a friendly reminder to complete a HealthWise assessment. Your last assessment was on {{ last_assessment.created_at|date:"d M Y" }}.
+
+Regular check-ins help you see whether your lifestyle changes are working. It takes about two minutes:
+{{ protocol }}://{{ domain }}{% url 'health:assessment_form' %}
+
+You can turn reminders off from your profile at any time.
+
+HealthWise

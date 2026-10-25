@@ -1,0 +1,53 @@
+{% extends "theme/base.html" %}
+{% block title %}Clinics{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Referrals</div>
+    <h2 class="page-title">Find a clinic</h2>
+    <p class="dh-page-head-sub">Search partner and community health services.</p>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-9">
+        <label class="form-label" for="q">Search</label>
+        {{ form.q }}
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-primary w-100" type="submit">Search clinics</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row row-cards">
+  {% for clinic in clinics %}
+    <div class="col-md-6 col-xl-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between gap-2">
+            <h3 class="card-title mb-1">{{ clinic.name }}</h3>
+            {% if clinic.is_partner %}<span class="badge bg-teal-lt">Partner</span>{% endif %}
+          </div>
+          <p class="text-secondary small mb-2">{{ clinic.address }}</p>
+          {% if clinic.services %}<p class="small mb-2"><i class="fas fa-stethoscope me-1"></i> {{ clinic.services }}</p>{% endif %}
+          {% if clinic.opening_hours %}<p class="small mb-2"><i class="fas fa-clock me-1"></i> {{ clinic.opening_hours }}</p>{% endif %}
+          <div class="d-flex flex-wrap gap-2">
+            {% if clinic.phone %}<a class="btn btn-sm btn-outline-primary" href="tel:{{ clinic.phone }}">{{ clinic.phone }}</a>{% endif %}
+            {% if clinic.email %}<a class="btn btn-sm btn-outline-secondary" href="mailto:{{ clinic.email }}">Email</a>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="card"><div class="card-body text-center text-secondary py-5">
+        {% if query %}No clinics matched "{{ query }}".{% else %}No clinics have been added yet.{% endif %}
+      </div></div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,9 +1,15 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
+from django.core import mail
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.health import engine
-from apps.health.models import Assessment
+from apps.health.models import Assessment, ClinicianNote, HealthGoal
+from apps.users.models import UserProfile
 
 
 class BMICalculationTests(TestCase):
@@ -478,6 +484,7 @@ class MVPJourneyTests(TestCase):
             'email': 'mvp@example.com',
             'password': 'Xk9!mQ2#Lp',
             'confirm_password': 'Xk9!mQ2#Lp',
+            'consent': 'on',
         })
         self.assertRedirects(response, reverse('dashboard'))
 
@@ -523,3 +530,201 @@ class DataIsolationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'No assessments yet')
         self.assertNotContains(response, 'View report')
+
+
+class HealthGoalTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('goaluser', password='pass')
+        self.client.force_login(self.user)
+
+    def test_create_goal(self):
+        response = self.client.post(reverse('health:goals'), {
+            'metric': 'weight_kg',
+            'target_value': '75',
+            'unit': 'kg',
+        })
+        self.assertRedirects(response, reverse('health:goals'))
+        goal = HealthGoal.objects.get(user=self.user)
+        self.assertEqual(goal.metric, 'weight_kg')
+        self.assertEqual(goal.display_label, 'Weight (kg)')
+
+    def test_goals_page_renders_with_goal(self):
+        HealthGoal.objects.create(
+            user=self.user, metric='systolic', target_value=120, unit='mmHg',
+        )
+        response = self.client.get(reverse('health:goals'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Systolic blood pressure')
+
+    def test_delete_goal(self):
+        goal = HealthGoal.objects.create(
+            user=self.user, metric='bmi', target_value=24,
+        )
+        response = self.client.post(reverse('health:goal_delete', args=[goal.pk]))
+        self.assertRedirects(response, reverse('health:goals'))
+        self.assertFalse(HealthGoal.objects.filter(pk=goal.pk).exists())
+
+
+class ClinicianNoteTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            'noteclinician', password='pass', is_staff=True,
+        )
+        self.patient = User.objects.create_user('notepatient', password='pass')
+        self.record = Assessment.objects.create(
+            user=self.patient, age=50, sex='male', height_cm=180,
+            weight_kg=95, waist_cm=100, systolic=145, diastolic=95,
+            blood_pressure_band='stage2', activity_level='light',
+            smoking_status='former', alcohol_status='moderate',
+            diet_quality='mixed', sleep_hours=6, risk_score=52,
+            risk_level='High', bmi=29.3, bmi_category='Overweight',
+            findings=[], recommendations=[], targets=[],
+        )
+
+    def test_staff_can_add_note(self):
+        self.client.force_login(self.staff)
+        response = self.client.post(
+            reverse('health:add_note', args=[self.record.pk]),
+            {'note': 'Review blood pressure in two weeks.'},
+        )
+        self.assertRedirects(
+            response, reverse('health:clinician_report', args=[self.record.pk]),
+        )
+        note = ClinicianNote.objects.get(assessment=self.record)
+        self.assertEqual(note.author, self.staff)
+
+    def test_follow_up_requires_date(self):
+        self.client.force_login(self.staff)
+        self.client.post(
+            reverse('health:add_note', args=[self.record.pk]),
+            {'note': 'Follow up.', 'follow_up_required': 'on'},
+        )
+        self.assertFalse(ClinicianNote.objects.exists())
+
+    def test_patient_cannot_add_note(self):
+        self.client.force_login(self.patient)
+        response = self.client.post(
+            reverse('health:add_note', args=[self.record.pk]),
+            {'note': 'Should not be allowed.'},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(ClinicianNote.objects.exists())
+
+
+class ReportDeliveryTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'reportuser', password='pass', email='report@example.com',
+        )
+        self.record = Assessment.objects.create(
+            user=self.user, age=40, sex='female', height_cm=165,
+            weight_kg=70, waist_cm=85, systolic=125, diastolic=82,
+            blood_pressure_band='elevated', activity_level='moderate',
+            smoking_status='never', alcohol_status='none',
+            diet_quality='good', sleep_hours=7, risk_score=24,
+            risk_level='Moderate', bmi=25.7, bmi_category='Overweight',
+            findings=[], recommendations=[], targets=[],
+        )
+        self.client.force_login(self.user)
+
+    def test_email_report_sends_message(self):
+        response = self.client.post(
+            reverse('health:email_report', args=[self.record.pk]),
+        )
+        self.assertRedirects(
+            response, reverse('health:report', args=[self.record.pk]),
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('HealthWise', mail.outbox[0].subject)
+
+    def test_pdf_report_downloads(self):
+        response = self.client.get(reverse('health:report_pdf', args=[self.record.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertTrue(response.content.startswith(b'%PDF'))
+
+    def test_other_user_cannot_download_pdf(self):
+        other = User.objects.create_user('pdfother', password='pass')
+        self.client.force_login(other)
+        response = self.client.get(reverse('health:report_pdf', args=[self.record.pk]))
+        self.assertEqual(response.status_code, 404)
+
+
+class HealthApiTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('apiuser', password='pass')
+        self.other = User.objects.create_user('apiother', password='pass')
+        self.record = Assessment.objects.create(
+            user=self.user, age=35, sex='male', height_cm=175,
+            weight_kg=72, waist_cm=82, systolic=118, diastolic=76,
+            blood_pressure_band='normal', activity_level='active',
+            smoking_status='never', alcohol_status='none',
+            diet_quality='good', sleep_hours=8, risk_score=12,
+            risk_level='Low', bmi=23.5, bmi_category='Healthy weight',
+            findings=[], recommendations=[], targets=[],
+        )
+        self.client.force_login(self.user)
+
+    def test_list_returns_only_own_assessments(self):
+        Assessment.objects.create(
+            user=self.other, age=60, sex='male', height_cm=170,
+            weight_kg=90, waist_cm=105, systolic=160, diastolic=100,
+            blood_pressure_band='stage2', activity_level='sedentary',
+            smoking_status='current', alcohol_status='heavy',
+            diet_quality='poor', sleep_hours=5, risk_score=80,
+            risk_level='Critical', bmi=31.1, bmi_category='Obesity class I',
+            findings=[], recommendations=[], targets=[],
+        )
+        response = self.client.get(reverse('health:api_assessments'))
+        payload = response.json()
+        self.assertEqual(payload['count'], 1)
+        self.assertEqual(payload['results'][0]['id'], self.record.pk)
+
+    def test_detail_returns_assessment(self):
+        response = self.client.get(
+            reverse('health:api_detail', args=[self.record.pk]),
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['risk_level'], 'Low')
+
+    def test_detail_rejects_other_users_assessment(self):
+        self.client.force_login(self.other)
+        response = self.client.get(
+            reverse('health:api_detail', args=[self.record.pk]),
+        )
+        self.assertEqual(response.status_code, 404)
+
+
+class ReminderCommandTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'reminderuser', password='pass', email='reminder@example.com',
+        )
+        UserProfile.objects.create(
+            user=self.user, email_verified=True, reminder_opt_in=True,
+        )
+        self.record = Assessment.objects.create(
+            user=self.user, age=45, sex='female', height_cm=160,
+            weight_kg=65, waist_cm=80, systolic=120, diastolic=78,
+            blood_pressure_band='normal', activity_level='light',
+            smoking_status='never', alcohol_status='none',
+            diet_quality='mixed', sleep_hours=7, risk_score=20,
+            risk_level='Low', bmi=25.4, bmi_category='Overweight',
+            findings=[], recommendations=[], targets=[],
+        )
+        Assessment.objects.filter(pk=self.record.pk).update(
+            created_at=timezone.now() - timedelta(days=60),
+        )
+
+    def test_command_sends_reminder_and_records_timestamp(self):
+        call_command('send_reminders', verbosity=0)
+        self.assertEqual(len(mail.outbox), 1)
+        profile = UserProfile.objects.get(user=self.user)
+        self.assertIsNotNone(profile.last_reminder_sent)
+
+    def test_command_skips_recent_assessment(self):
+        Assessment.objects.filter(pk=self.record.pk).update(
+            created_at=timezone.now() - timedelta(days=2),
+        )
+        call_command('send_reminders', verbosity=0)
+        self.assertEqual(len(mail.outbox), 0)

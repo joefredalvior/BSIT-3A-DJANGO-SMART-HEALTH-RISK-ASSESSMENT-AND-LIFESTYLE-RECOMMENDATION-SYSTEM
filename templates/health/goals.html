@@ -1,0 +1,130 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Health advisory</div>
+    <h2 class="page-title">My Health Goals</h2>
+    <p class="dh-page-head-sub">Set measurable targets and track them against your latest assessment.</p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'health:assessment_form' %}" class="btn btn-primary">
+      <i class="fas fa-heart-pulse me-1"></i> New assessment
+    </a>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Add a goal</h3>
+      </div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>
+          {% endif %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-plus me-1"></i> Add goal
+          </button>
+        </form>
+      </div>
+      <div class="card-footer text-secondary small">
+        Lower-is-better goals include risk score, BMI, weight, waist, and blood pressure.
+        Sleep and fruit/vegetable goals are higher-is-better.
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    {% if latest %}
+      <div class="alert alert-info d-flex align-items-center gap-2">
+        <i class="fas fa-circle-info"></i>
+        <div class="small">
+          Progress is measured against your latest assessment from
+          {{ latest.created_at|date:"d M Y" }}.
+        </div>
+      </div>
+    {% else %}
+      <div class="alert alert-warning d-flex align-items-center gap-2">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div class="small">
+          Complete an assessment to start tracking progress on your goals.
+        </div>
+      </div>
+    {% endif %}
+
+    {% if goal_rows %}
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Active goals</h3>
+          <div class="card-actions text-secondary small">{{ goal_rows|length }} goal{{ goal_rows|length|pluralize }}</div>
+        </div>
+        <div class="card-body">
+          {% for row in goal_rows %}
+            <div class="border-bottom pb-3 mb-3">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <div class="fw-bold">{{ row.goal.display_label }}</div>
+                  <div class="text-secondary small">
+                    Target: {{ row.progress.target }} {{ row.goal.unit }}
+                    {% if row.goal.due_date %} &middot; by {{ row.goal.due_date|date:"d M Y" }}{% endif %}
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  {% if row.progress.met %}
+                    <span class="badge bg-success-lt"><i class="fas fa-check me-1"></i>Achieved</span>
+                  {% elif row.progress.current is not None %}
+                    <span class="badge bg-warning-lt">In progress</span>
+                  {% else %}
+                    <span class="badge bg-secondary-lt">No data</span>
+                  {% endif %}
+                  <form method="post" action="{% url 'health:goal_delete' row.goal.pk %}"
+                        onsubmit="return confirm('Remove this goal?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-ghost-danger" title="Remove goal">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-2">
+                <div class="progress flex-grow-1" style="height: 8px;">
+                  <div class="progress-bar {% if row.progress.met %}bg-success{% else %}bg-primary{% endif %}"
+                       style="width: {{ row.progress.percent }}%"></div>
+                </div>
+                <span class="small text-secondary" style="min-width: 7rem; text-align: right;">
+                  {% if row.progress.current is not None %}
+                    {{ row.progress.current }} / {{ row.progress.target }}
+                  {% else %}—{% endif %}
+                </span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card">
+        <div class="card-body py-5">
+          <div class="empty">
+            <div class="empty-icon"><i class="fas fa-bullseye fa-2x"></i></div>
+            <p class="empty-title">No goals yet</p>
+            <p class="empty-subtitle text-secondary">
+              Add a goal such as lowering your systolic blood pressure or increasing
+              your daily fruit and vegetable servings.
+            </p>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

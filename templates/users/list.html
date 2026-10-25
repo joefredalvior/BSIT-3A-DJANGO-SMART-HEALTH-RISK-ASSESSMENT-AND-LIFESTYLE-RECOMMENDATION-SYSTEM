@@ -348,7 +348,10 @@
 
         fetch(SAVE_URL, {
             method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken },
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
             body: formData,
         })
         .then(async (resp) => {
@@ -385,7 +388,10 @@
 
         fetch(DELETE_URL_BASE + deleteTargetId + '/', {
             method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken },
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
         })
         .then(async (resp) => {
             const data = await resp.json();

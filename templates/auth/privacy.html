@@ -1,0 +1,42 @@
+{% extends "auth/base_auth.html" %}
+{% block auth_page_title %}Privacy notice - HealthWise{% endblock %}
+{% block auth_eyebrow %}Privacy &amp; consent{% endblock %}
+{% block auth_aside_title %}You own your health data.{% endblock %}
+{% block auth_aside_sub %}This notice explains what we collect, why we collect it, and the controls available to you.{% endblock %}
+{% block auth_title %}Privacy notice{% endblock %}
+{% block auth_subtitle %}Version {{ privacy_version }} · Effective immediately{% endblock %}
+
+{% block auth_content %}
+<div class="privacy-copy small text-secondary" style="max-height: 52vh; overflow-y: auto; padding-right: .5rem;">
+  <p><strong class="text-body">What we collect.</strong> Account details (name, username, email),
+  optional profile details (birthdate, sex, height, activity level, family history,
+  existing conditions), and the health measurements and lifestyle answers you submit
+  in assessments.</p>
+
+  <p><strong class="text-body">Why we collect it.</strong> To calculate your risk score,
+  generate personalised recommendations, track changes over time, prefill future
+  assessments, and send optional report or reminder emails.</p>
+
+  <p><strong class="text-body">Who can see it.</strong> Your assessments are private to
+  your account. Authorised clinicians and administrators can view assessment reports
+  for care and system administration. We do not sell your data or use it for advertising.</p>
+
+  <p><strong class="text-body">How long we keep it.</strong> We keep your data until you
+  delete your account or ask us to remove it. Deleting an assessment removes it
+  immediately; deleting your account removes your profile, assessments, goals, and
+  related records.</p>
+
+  <p><strong class="text-body">Your controls.</strong> You can export a machine-readable
+  copy of your data, delete individual assessments, permanently delete your account,
+  and opt out of reminder emails from your profile.</p>
+
+  <p><strong class="text-body">Security.</strong> We use password hashing, CSRF protection,
+  login lockouts, email verification, and access controls. No online system is perfectly
+  secure, so use a unique password and keep your email account protected.</p>
+
+  <p><strong class="text-body">Medical disclaimer.</strong> HealthWise is an educational
+  screening aid, not a diagnosis or a substitute for professional medical advice.
+  Seek care from a qualified clinician for medical concerns.</p>
+</div>
+<a href="{% url 'register' %}" class="btn btn-primary w-100 auth-submit mt-3">Back to registration</a>
+{% endblock %}

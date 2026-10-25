@@ -1,0 +1,46 @@
+{% extends "theme/base.html" %}
+{% block title %}{{ message.subject|default:"Message" }}{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Secure message</div>
+    <h2 class="page-title">{{ message.subject|default:"(No subject)" }}</h2>
+    <p class="dh-page-head-sub">
+      From {{ message.sender.get_full_name|default:message.sender.username }}
+      to {{ message.recipient.get_full_name|default:message.recipient.username }}
+      &middot; {{ message.created_at|date:"d M Y H:i" }}
+    </p>
+  </div>
+  <div class="btn-list"><a href="{% url 'wellness:inbox' %}" class="btn btn-outline-secondary">Back to inbox</a></div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-body">
+        <p class="mb-0" style="white-space: pre-wrap;">{{ message.body }}</p>
+        {% if message.assessment %}
+          <div class="border-top mt-3 pt-3 small">
+            Linked assessment:
+            <a href="{% url 'health:report' message.assessment.pk %}">{{ message.assessment.created_at|date:"d M Y" }}</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Reply</h3></div>
+      <div class="card-body">
+        <form method="post" action="{% url 'wellness:reply_message' message.pk %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="body">Your reply</label>
+            <textarea class="form-control" id="body" name="body" rows="4" required></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit">Send reply</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "theme/base.html" %}
+{% block title %}Vitals{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">Wellness</div>
+    <h2 class="page-title">Vitals &amp; progress</h2>
+    <p class="dh-page-head-sub">Track weight, waist, blood pressure, sleep and activity between checkups.</p>
+  </div>
+  <div class="btn-list">
+    <a href="{% url 'wellness:import_vitals' %}" class="btn btn-outline-secondary" onclick="document.getElementById('import-panel').classList.toggle('d-none'); return false;">
+      <i class="fas fa-file-import me-1"></i> Import CSV
+    </a>
+  </div>
+</div>
+
+<div id="import-panel" class="card mb-3 d-none">
+  <div class="card-body">
+    <form method="post" action="{% url 'wellness:import_vitals' %}" enctype="multipart/form-data" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <div class="col-md-8">
+        <label class="form-label">CSV export from your device</label>
+        {{ import_form.file }}
+        <div class="form-hint">Required: <code>date</code> column. Optional: weight_kg, waist_cm, systolic, diastolic, sleep_hours, exercise_minutes, note.</div>
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-primary w-100" type="submit">Upload readings</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row row-cards mb-3">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="text-secondary small">Latest weight</div>
+      <div class="h2 mb-0">{{ latest.weight_kg|default:"-" }}{% if latest.weight_kg %} kg{% endif %}</div>
+      <div class="text-secondary small">{% if latest.bmi %}BMI {{ latest.bmi }}{% else %}BMI needs height from assessment{% endif %}</div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="text-secondary small">Blood pressure</div>
+      <div class="h2 mb-0">{{ latest.blood_pressure_display|default:"-" }}</div>
+      <div class="text-secondary small">mmHg</div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="text-secondary small">Sleep</div>
+      <div class="h2 mb-0">{{ latest.sleep_hours|default:"-" }}{% if latest.sleep_hours %} h{% endif %}</div>
+      <div class="text-secondary small">Last reading {{ latest.measured_at|date:"d M Y"|default:"-" }}</div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="text-secondary small">Exercise</div>
+      <div class="h2 mb-0">{{ latest.exercise_minutes|default:"-" }}{% if latest.exercise_minutes %} min{% endif %}</div>
+      <div class="text-secondary small">Last reading</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Add a reading</h3></div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>{% endif %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <button class="btn btn-primary w-100" type="submit">Save reading</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">Trends</h3></div>
+      <div class="card-body"><canvas id="vitals-chart" height="220" aria-label="Vitals trend chart" role="img"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Recent readings</h3></div>
+      <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+          <thead><tr><th>Date</th><th>Weight</th><th>BMI</th><th>BP</th><th>Sleep</th><th>Exercise</th><th>Source</th><th></th></tr></thead>
+          <tbody>
+            {% for reading in readings %}
+              <tr>
+                <td>{{ reading.measured_at|date:"d M Y H:i" }}</td>
+                <td>{{ reading.weight_kg|default:"-" }}</td>
+                <td>{{ reading.bmi|default:"-" }}</td>
+                <td>{{ reading.blood_pressure_display }}</td>
+                <td>{{ reading.sleep_hours|default:"-" }}</td>
+                <td>{{ reading.exercise_minutes|default:"-" }}</td>
+                <td><span class="badge bg-secondary-lt">{{ reading.get_source_display }}</span></td>
+                <td class="text-end">
+                  <form method="post" action="{% url 'wellness:delete_vital' reading.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Delete reading">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="text-center text-secondary py-4">No readings yet. Add your first measurement.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{{ chart|json_script:"vitals-data" }}
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  (function () {
+    const node = document.getElementById('vitals-data');
+    if (!node || typeof Chart === 'undefined') return;
+    const rows = JSON.parse(node.textContent);
+    new Chart(document.getElementById('vitals-chart'), {
+      type: 'line',
+      data: {
+        labels: rows.map(r => r.date),
+        datasets: [
+          { label: 'Weight (kg)', data: rows.map(r => r.weight), borderColor: '#0f766e', tension: .3 },
+          { label: 'Systolic', data: rows.map(r => r.systolic), borderColor: '#dc2626', tension: .3 },
+          { label: 'Sleep (h)', data: rows.map(r => r.sleep), borderColor: '#2563eb', tension: .3 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { beginAtZero: false } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

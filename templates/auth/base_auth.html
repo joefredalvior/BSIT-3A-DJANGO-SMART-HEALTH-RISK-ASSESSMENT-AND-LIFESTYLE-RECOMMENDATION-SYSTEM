@@ -1,0 +1,88 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-bs-theme="light" data-bs-theme-primary="teal">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{% block auth_page_title %}HealthWise{% endblock %}</title>
+  <link rel="icon" href="{% static 'favicon-dev.ico' %}" type="image/x-icon" />
+  <link href="{% static 'css/tabler.css' %}" rel="stylesheet" />
+  <link href="{% static 'css/app-theme.css' %}" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-shell">
+      <aside class="auth-aside">
+        <a href="{% url 'login' %}" class="auth-brand">
+          <span class="dh-brand-mark"><i class="fas fa-heart-pulse"></i></span>
+          <span class="lh-1">
+            <span class="dh-brand-name">Health<span class="auth-brand-accent">Wise</span></span>
+            <span class="dh-brand-sub">Advisory System</span>
+          </span>
+        </a>
+
+        <div class="auth-aside-body">
+          <div class="auth-aside-eyebrow">{% block auth_eyebrow %}Account security{% endblock %}</div>
+          <h1 class="auth-aside-title">{% block auth_aside_title %}Your health data, protected.{% endblock %}</h1>
+          <p class="auth-aside-sub">
+            {% block auth_aside_sub %}
+            HealthWise keeps your assessments private and gives you control over
+            your account and personal information.
+            {% endblock %}
+          </p>
+
+          <ul class="auth-features">
+            <li>
+              <span class="auth-feature-icon"><i class="fas fa-lock"></i></span>
+              <span>Private assessments visible only to your account.</span>
+            </li>
+            <li>
+              <span class="auth-feature-icon"><i class="fas fa-shield-heart"></i></span>
+              <span>Email verification and session protection.</span>
+            </li>
+            <li>
+              <span class="auth-feature-icon"><i class="fas fa-download"></i></span>
+              <span>Export or permanently delete your data at any time.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="auth-aside-footer">
+          Educational screening aid only — not a medical diagnosis.
+        </div>
+      </aside>
+
+      <main class="auth-main">
+        <div class="auth-mobile-brand">
+          <span class="dh-brand-mark"><i class="fas fa-heart-pulse"></i></span>
+          <span class="dh-brand-name" style="color: var(--tblr-body-color);">Health<span class="auth-brand-accent">Wise</span></span>
+        </div>
+
+        <div class="auth-card-head">
+          <h1>{% block auth_title %}Account{% endblock %}</h1>
+          <p>{% block auth_subtitle %}{% endblock %}</p>
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}info{% endif %} auth-alert" role="alert">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block auth_content %}{% endblock %}
+
+        <p class="auth-switch">
+          {% block auth_footer %}
+          <a href="{% url 'login' %}">Back to sign in</a>
+          {% endblock %}
+        </p>
+      </main>
+    </div>
+  </div>
+
+  <script src="{% static 'js/tabler.js' %}" defer></script>
+</body>
+</html>

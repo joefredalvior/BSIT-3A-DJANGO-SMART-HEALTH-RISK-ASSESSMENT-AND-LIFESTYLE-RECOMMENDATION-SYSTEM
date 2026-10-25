@@ -1,6 +1,6 @@
 {% load static %}
 <!doctype html>
-<html lang="en" data-bs-theme-primary="teal">
+<html lang="en" data-bs-theme="light" data-bs-theme-primary="teal">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -8,14 +8,11 @@
   <title>Sign in - HealthWise</title>
   <link rel="icon" href="{% static 'favicon-dev.ico' %}" type="image/x-icon" />
   <link href="{% static 'css/tabler.css' %}" rel="stylesheet" />
-  <link href="{% static 'css/tabler-vendors.css' %}" rel="stylesheet" />
   <link href="{% static 'css/app-theme.css' %}" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
-  <script src="{% static 'js/tabler-theme.js' %}"></script>
-
   <div class="auth-page">
     <div class="auth-shell">
 
@@ -23,7 +20,7 @@
         <a href="{% url 'login' %}" class="auth-brand">
           <span class="dh-brand-mark"><i class="fas fa-heart-pulse"></i></span>
           <span class="lh-1">
-            <span class="dh-brand-name">Health<span class="text-warning">Wise</span></span>
+            <span class="dh-brand-name">Health<span class="auth-brand-accent">Wise</span></span>
             <span class="dh-brand-sub">Advisory System</span>
           </span>
         </a>
@@ -60,7 +57,7 @@
       <main class="auth-main">
         <div class="auth-mobile-brand">
           <span class="dh-brand-mark"><i class="fas fa-heart-pulse"></i></span>
-          <span class="dh-brand-name" style="color: var(--tblr-body-color);">Health<span class="text-primary">Wise</span></span>
+          <span class="dh-brand-name" style="color: var(--tblr-body-color);">Health<span class="auth-brand-accent">Wise</span></span>
         </div>
 
         <div class="auth-card-head">
@@ -90,7 +87,10 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label" for="id_password">Password</label>
+            <div class="d-flex justify-content-between align-items-center">
+              <label class="form-label" for="id_password">Password</label>
+              <a href="{% url 'password_reset' %}" class="small">Forgot password?</a>
+            </div>
             <div class="input-group">
               <span class="input-group-text"><i class="fas fa-lock"></i></span>
               <input type="password" class="form-control" id="id_password" name="password"
@@ -116,8 +116,6 @@
 
     </div>
   </div>
-
-  {% include 'theme/settings.html' %}
 
   <script src="{% static 'js/tabler.js' %}" defer></script>
   <script>

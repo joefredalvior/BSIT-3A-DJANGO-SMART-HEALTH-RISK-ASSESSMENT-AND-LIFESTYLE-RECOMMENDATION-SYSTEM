@@ -1,0 +1,41 @@
+{% extends "theme/base.html" %}
+{% block title %}Screening result{% endblock %}
+{% block content %}
+<div class="dh-page-head">
+  <div>
+    <div class="page-pretitle">{{ screening.get_kind_display }}</div>
+    <h2 class="page-title">{{ screening.get_severity_display }} symptoms</h2>
+    <p class="dh-page-head-sub">Completed {{ screening.created_at|date:"d M Y H:i" }} &middot; Score {{ screening.score }}</p>
+  </div>
+  <div class="btn-list"><a href="{% url 'wellness:screenings' %}" class="btn btn-outline-secondary">New screening</a></div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="alert alert-{% if screening.severity == 'minimal' or screening.severity == 'mild' %}info{% elif screening.severity == 'moderate' %}warning{% else %}danger{% endif %} mb-0">
+          <h4 class="alert-title">Guidance</h4>
+          <p class="mb-0">{{ guidance }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Your answers</h3></div>
+      <div class="table-responsive">
+        <table class="table card-table">
+          <tbody>
+            {% for question, answer in answers %}
+              <tr><td>{{ question }}</td><td class="text-end">{{ answer }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer text-secondary small">
+        Screening tools support conversation with a clinician. They do not replace a professional assessment.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

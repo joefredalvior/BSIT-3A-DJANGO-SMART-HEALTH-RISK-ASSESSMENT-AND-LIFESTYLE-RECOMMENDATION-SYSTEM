@@ -1,5 +1,5 @@
 {% load static %}
-<html lang="en" data-bs-theme-primary="teal">
+<html lang="{{ LANG|default:'en' }}" data-bs-theme="light" data-bs-theme-primary="teal">
   <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -8,19 +8,17 @@
       HealthWise - Health Risk Assessment &amp; Lifestyle Advisory
     </title>
     <link rel="icon" href="{% static 'favicon-dev.ico' %}" type="image/x-icon"/>
+    <link rel="manifest" href="{% url 'manifest' %}"/>
+    <meta name="theme-color" content="#0f766e"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
 
     <link href="{% static 'css/tabler.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-flags.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-socials.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-payments.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-vendors.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-marketing.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-themes.css' %}" rel="stylesheet"/>
     <link href="{% static 'css/app-theme.css' %}" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   </head>
 
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <div class="page">
 
       {% if request.user.is_authenticated %}
@@ -28,8 +26,26 @@
       {% endif %}
 
       <div class="page-wrapper">
-        <div class="page-body">
+        <main id="main-content" class="page-body" tabindex="-1">
           <div class="container-xl">
+            {% if account_profile and not account_profile.email_verified %}
+              <div class="alert alert-warning alert-dismissible mb-3" role="status">
+                <div class="d-flex align-items-start">
+                  <i class="fas fa-envelope-circle-check me-2 mt-1"></i>
+                  <div class="flex-grow-1">
+                    <strong>Verify your email address.</strong>
+                    We sent a verification link to {{ request.user.email }}.
+                    <form method="post" action="{% url 'resend_verification' %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-link p-0 align-baseline">Resend email</button>
+                    </form>
+                  </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endif %}
+
+            <div aria-live="polite" aria-atomic="false">
             {% if messages %}
               {% for message in messages %}
                 <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible mb-3" role="alert">
@@ -49,19 +65,24 @@
                 </div>
               {% endfor %}
             {% endif %}
+            </div>
             {% block content %}
             {% endblock %}
           </div>
-        </div>
+        </main>
         {% include 'theme/footer.html' %}
       </div>
     </div>
 
-    {% include 'theme/settings.html' %}
-
-    <script src="{% static 'js/tabler-theme.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/tabler.js' %}"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {});
+        });
+      }
+    </script>
     {% block extra_js %}{% endblock %}
   </body>
 </html>

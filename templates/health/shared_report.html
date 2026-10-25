@@ -1,0 +1,127 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Shared health report - HealthWise</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="{% static 'css/app-theme.css' %}">
+  <style>
+    body { background: #f6f8fb; }
+    .shared-shell { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+  </style>
+</head>
+<body>
+<div class="shared-shell">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <div class="h1 mb-0">Health<span class="text-teal">Wise</span></div>
+      <div class="text-secondary small">Shared health risk report</div>
+    </div>
+    <div class="btn-list">
+      <button class="btn btn-outline-secondary" onclick="window.print()">Print</button>
+    </div>
+  </div>
+
+  {% if invalid %}
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <div class="display-4 text-warning mb-2"><i class="fas fa-link-slash"></i></div>
+        <h1>This link is no longer available</h1>
+        <p class="text-secondary mb-0">The link may have expired or been revoked by the person who shared it.</p>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-info">
+      This is a read-only report shared by the patient. It is not medical advice. The link expires on
+      {{ share.expires_at|date:"d M Y H:i" }} and has been viewed {{ share.view_count }} time{{ share.view_count|pluralize }}.
+    </div>
+
+    <div class="row row-cards mb-3">
+      <div class="col-md-4">
+        <div class="card h-100"><div class="card-body text-center">
+          <div class="subheader mb-2">Risk score</div>
+          <div class="display-2 fw-bold text-{{ record.level_colour|default:'secondary' }}">{{ record.risk_score }}<span class="fs-4 text-secondary">/100</span></div>
+          <span class="badge bg-{{ record.level_colour|default:'secondary' }}">{{ record.risk_level }} risk</span>
+          <p class="text-secondary small mt-3 mb-0">{{ record.summary }}</p>
+        </div></div>
+      </div>
+      <div class="col-md-8">
+        <div class="card h-100"><div class="card-body">
+          <div class="subheader mb-1">Assessment</div>
+          <div class="h3">{{ record.created_at|date:"d M Y, H:i" }}</div>
+          <div class="row g-3 mt-2">
+            <div class="col-6 col-md-3"><div class="subheader">BMI</div><div class="h3 mb-0">{{ record.bmi|default:"-" }}</div><div class="small text-secondary">{{ record.bmi_category|default:"Not calculated" }}</div></div>
+            <div class="col-6 col-md-3"><div class="subheader">Blood pressure</div><div class="h3 mb-0">{{ record.systolic }}/{{ record.diastolic }}</div><div class="small text-secondary">{{ record.get_blood_pressure_band_display }}</div></div>
+            <div class="col-6 col-md-3"><div class="subheader">Waist-to-height</div><div class="h3 mb-0">{{ record.whtr|default:"-" }}</div><div class="small text-secondary">{{ record.whtr_category|default:"-" }}</div></div>
+            <div class="col-6 col-md-3"><div class="subheader">Sleep</div><div class="h3 mb-0">{{ record.sleep_hours }} h</div><div class="small text-secondary">per night</div></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">Risk factors</h3></div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead><tr><th>Factor</th><th>Finding</th><th>Band</th><th>Points</th></tr></thead>
+          <tbody>
+            {% for finding in record.finding_list %}
+              <tr><td class="fw-bold">{{ finding.label }}</td><td class="text-secondary">{{ finding.detail }}</td><td>{{ finding.band }}</td><td>+{{ finding.points }}</td></tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-secondary">No risk factors identified.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">Lifestyle recommendations</h3></div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for rec in record.recommendation_list %}
+            <div class="col-md-6">
+              <div class="dh-recommendation h-100">
+                <div class="d-flex gap-2">
+                  <span class="dh-recommendation-num">{{ rec.priority }}</span>
+                  <div>
+                    <h4>{{ rec.title }}</h4>
+                    <div class="text-secondary small mb-2">{{ rec.category }} &middot; {{ rec.timeframe }}</div>
+                    <p class="small mb-2">{{ rec.advice }}</p>
+                    <div class="small"><strong>Target:</strong> {{ rec.target }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="col-12 text-secondary">No lifestyle changes are recommended at this time.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {% if record.clinician_notes.all %}
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title">Clinical notes</h3></div>
+        <div class="card-body">
+          {% for note in record.clinician_notes.all %}
+            <div class="border-bottom pb-2 mb-2">
+              <div class="small text-secondary">{{ note.author.get_full_name|default:note.author.username }} &middot; {{ note.created_at|date:"d M Y H:i" }}</div>
+              <div>{{ note.note|linebreaksbr }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="alert alert-warning mb-0">
+      <strong>Important:</strong> {{ disclaimer }}
+    </div>
+  {% endif %}
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</body>
+</html>
