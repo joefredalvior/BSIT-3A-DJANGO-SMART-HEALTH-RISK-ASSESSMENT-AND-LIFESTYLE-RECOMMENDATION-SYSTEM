@@ -1,8 +1,9 @@
-from datetime import date
+﻿from datetime import date
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST, require_http_methods
@@ -25,8 +26,8 @@ def _is_clinician(user):
 
 
 # PAGE
-@login_required(login_url='login')
-@user_passes_test(_is_superuser, login_url='dashboard')
+@login_required(login_url='core:login')
+@user_passes_test(_is_superuser, login_url='core:dashboard')
 def user_list_page(request):
     query = request.GET.get('q', '').strip()
 
@@ -51,8 +52,8 @@ def user_list_page(request):
 
 
 # LIST USERS (AJAX)
-@login_required(login_url='login')
-@user_passes_test(_is_superuser, login_url='dashboard')
+@login_required(login_url='core:login')
+@user_passes_test(_is_superuser, login_url='core:dashboard')
 def user_list_ajax(request):
     users_list = User.objects.all().order_by('-date_joined')
     paginator = Paginator(users_list, 10)
@@ -65,6 +66,7 @@ def user_list_ajax(request):
         'last_name',
         'email',
         'is_staff',
+        'is_superuser',
         'is_active',
         'date_joined',
     ))
@@ -79,8 +81,8 @@ def user_list_ajax(request):
 
 
 # GET SINGLE USER (AJAX)
-@login_required(login_url='login')
-@user_passes_test(_is_superuser, login_url='dashboard')
+@login_required(login_url='core:login')
+@user_passes_test(_is_superuser, login_url='core:dashboard')
 def user_get_ajax(request, pk):
     user = get_object_or_404(User, pk=pk)
     return JsonResponse({
@@ -90,13 +92,14 @@ def user_get_ajax(request, pk):
         "last_name":  user.last_name,
         "email":      user.email,
         "is_staff":   user.is_staff,
+        "is_superuser": user.is_superuser,
         "is_active":  user.is_active,
     })
 
 
 # CREATE / UPDATE USER (AJAX)
-@login_required(login_url='login')
-@user_passes_test(_is_superuser, login_url='dashboard')
+@login_required(login_url='core:login')
+@user_passes_test(_is_superuser, login_url='core:dashboard')
 @require_POST
 def user_save_ajax(request):
     user_id = request.POST.get("id")
@@ -125,6 +128,7 @@ def user_save_ajax(request):
     user.last_name  = request.POST.get("last_name", "")
     user.email      = email
     user.is_staff   = request.POST.get("is_staff") == "true"
+    user.is_superuser = request.POST.get("is_superuser") == "true"
     user.is_active  = request.POST.get("is_active") == "true"
 
     password = request.POST.get("password")
@@ -151,8 +155,8 @@ def user_save_ajax(request):
 
 
 # DELETE USER (AJAX)
-@login_required(login_url='login')
-@user_passes_test(_is_superuser, login_url='dashboard')
+@login_required(login_url='core:login')
+@user_passes_test(_is_superuser, login_url='core:dashboard')
 @require_POST
 def user_delete_ajax(request, pk):
     user = get_object_or_404(User, pk=pk)
@@ -161,7 +165,7 @@ def user_delete_ajax(request, pk):
     user.delete()
     return JsonResponse({"status": "deleted"})
 # PROFILE
-@login_required(login_url='login')
+@login_required(login_url='core:login')
 @require_http_methods(['GET', 'POST'])
 def profile_view(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
@@ -223,6 +227,18 @@ def profile_view(request):
             messages.success(request, 'Profile saved. New assessments will be prefilled.')
             return redirect('users:profile')
 
+    # Profile completeness nudges
+    completeness_fields = [
+        ('birthdate', 'Date of birth'),
+        ('sex', 'Sex'),
+        ('height_cm', 'Height'),
+        ('activity_level', 'Activity level'),
+        ('family_history', 'Family history'),
+        ('conditions', 'Existing conditions'),
+    ]
+    missing = [label for field, label in completeness_fields if not getattr(profile, field, None)]
+    completeness_pct = int(round((1 - len(missing) / len(completeness_fields)) * 100))
+
     return render(request, 'users/profile.html', {
         'profile': profile,
         'form': form,
@@ -232,13 +248,29 @@ def profile_view(request):
         'activity_choices': engine.ACTIVITY_LEVELS,
         'family_history_choices': engine.FAMILY_HISTORY_CHOICES,
         'condition_choices': engine.CONDITION_CHOICES,
+        'completeness_pct': completeness_pct,
+        'completeness_missing': missing,
     })
 
 
 # CLINICIAN DASHBOARD
-@login_required(login_url='login')
-@user_passes_test(_is_clinician, login_url='dashboard')
+@login_required(login_url='core:login')
+@user_passes_test(_is_clinician, login_url='core:dashboard')
 def clinician_dashboard(request):
+    """
+    Display the clinician dashboard with risk assessment statistics.
+    
+    Context variables passed to template:
+        - assessments: Paginated list of all assessments (filtered by search query)
+        - query: Search query string from request GET parameters
+        - total: Total count of assessments
+        - average_score: Average risk score across all assessments (or None)
+        - high_risk_count: Count of assessments with High or Critical risk level
+        - total_patients: Count of distinct patients who have assessments
+        - today_assessments: Count of assessments created today
+        - risk_distribution: QuerySet with risk level breakdown (risk_level + count)
+        - active_patients: Count of patients assessed in the last 30 days
+    """
     query = request.GET.get('q', '').strip()
     assessments = Assessment.objects.select_related('user').all()
 
@@ -252,6 +284,24 @@ def clinician_dashboard(request):
     stats = assessments.aggregate(average=Avg('risk_score'))
     high_risk_count = assessments.filter(risk_level__in=['High', 'Critical']).count()
 
+    # Additional statistics
+    total_patients = assessments.values('user').distinct().count()
+    today_assessments = assessments.filter(
+        created_at=datetime.now().date()
+    ).count()
+
+    # Risk distribution
+    risk_distribution = assessments.values('risk_level').annotate(
+        count=Count('id')
+    ).order_by('risk_level')
+
+    # Active patients (last 30 days)
+    from datetime import timedelta
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    active_patients = assessments.filter(
+        created_at__gte=thirty_days_ago
+    ).values('user').distinct().count()
+
     paginator = Paginator(assessments, 20)
     page = paginator.get_page(request.GET.get('page', 1))
 
@@ -261,4 +311,37 @@ def clinician_dashboard(request):
         'total': assessments.count(),
         'average_score': int(round(stats['average'])) if stats['average'] is not None else None,
         'high_risk_count': high_risk_count,
+        'total_patients': total_patients,
+        'today_assessments': today_assessments,
+        'risk_distribution': risk_distribution,
+        'active_patients': active_patients,
     })
+
+
+# PASSWORD CHANGE
+@login_required(login_url='core:login')
+@require_http_methods(['GET', 'POST'])
+def password_change(request):
+    """Let the signed-in user change their own password."""
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password', '')
+        new_password1 = request.POST.get('new_password1', '')
+        new_password2 = request.POST.get('new_password2', '')
+
+        if not request.user.check_password(old_password):
+            messages.error(request, 'Your current password is incorrect.')
+        elif new_password1 != new_password2:
+            messages.error(request, 'The two new passwords do not match.')
+        elif len(new_password1) < 8:
+            messages.error(request, 'Password must be at least 8 characters.')
+        elif new_password1 == old_password:
+            messages.error(request, 'New password must differ from your current password.')
+        else:
+            request.user.set_password(new_password1)
+            request.user.save()
+            update_session_auth_hash(request, request.user)
+            messages.success(request, 'Your password was changed successfully.')
+            return redirect('users:profile')
+
+    return render(request, 'users/password_change.html')
+

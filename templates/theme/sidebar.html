@@ -1,7 +1,7 @@
-<aside class="navbar navbar-vertical navbar-expand-lg navbar-dark dh-sidebar">
+﻿<aside class="navbar navbar-vertical navbar-expand-lg navbar-dark dh-sidebar">
   <div class="container-fluid">
     <div class="navbar-brand navbar-brand-autodark dh-brand">
-      <a href="{% url 'dashboard' %}" class="d-flex align-items-center gap-2 text-decoration-none">
+      <a href="{% url 'core:dashboard' %}" class="d-flex align-items-center gap-2 text-decoration-none">
         <span class="dh-brand-mark">
           <i class="fa-solid fa-heart-pulse"></i>
         </span>
@@ -33,11 +33,14 @@
           </span>
         </li>
         <li class="nav-item mb-1">
-          <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+          <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'core:dashboard' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="fa fa-dashboard"></i>
             </span>
             <span class="nav-link-title">Dashboard</span>
+            {% if user.is_authenticated %}
+            <span class="nav-link-badge bg-warning text-dark">{{ unread_messages|default:0 }}</span>
+            {% endif %}
           </a>
         </li>
 
@@ -86,6 +89,30 @@
             <span class="nav-link-title">Patient Assessments</span>
           </a>
         </li>
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'appointments_list' %}active{% endif %}" href="{% url 'core:appointments_list' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-calendar-check"></i>
+            </span>
+            <span class="nav-link-title">Appointments</span>
+          </a>
+        </li>
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'messages_list' %}active{% endif %}" href="{% url 'core:messages_list' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-envelope"></i>
+            </span>
+            <span class="nav-link-title">Secure Messages</span>
+          </a>
+        </li>
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'patient_assignments' %}active{% endif %}" href="{% url 'core:patient_assignments' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-user-md"></i>
+            </span>
+            <span class="nav-link-title">Patient Assignments</span>
+          </a>
+        </li>
         {% endif %}
 
         <li class="nav-item">
@@ -97,7 +124,7 @@
           </a>
         </li>
 
-        {% if user.is_superuser %}
+        {% if user.is_staff or user.is_superuser %}
         <li class="nav-item">
           <span class="dh-nav-section">Administration</span>
         </li>
@@ -109,11 +136,27 @@
             <span class="nav-link-title">User Management</span>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'system_settings' %}active{% endif %}" href="{% url 'core:system_settings' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-cog"></i>
+            </span>
+            <span class="nav-link-title">System Settings</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'audit_log' %}active{% endif %}" href="{% url 'core:audit_log' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-history"></i>
+            </span>
+            <span class="nav-link-title">Audit Log</span>
+          </a>
+        </li>
         {% endif %}
 
         {% if user.is_authenticated %}
         <li class="nav-item d-lg-none">
-          <a class="nav-link" href="{% url 'logout' %}">
+          <a class="nav-link" href="{% url 'core:logout' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="nav-icon fas fa-sign-out-alt"></i>
             </span>
@@ -129,12 +172,12 @@
               <span class="min-w-0 flex-grow-1">
                 <span class="dh-user-name">{{ user.username }}</span>
                 <span class="dh-user-role">
-                  {% if user.is_superuser %}Administrator{% elif user.is_staff %}Clinician{% else %}Patient{% endif %}
+                  {% if user.is_staff or user.is_superuser %}Administrator{% elif user.is_staff %}Clinician{% else %}Patient{% endif %}
                 </span>
               </span>
             </a>
             {% if user.is_authenticated %}
-            <a href="{% url 'logout' %}" class="dh-user-logout" title="Logout">
+            <a href="{% url 'core:logout' %}" class="dh-user-logout" title="Logout">
               <i class="fas fa-sign-out-alt"></i>
             </a>
             {% endif %}

@@ -50,6 +50,70 @@
   </div>
 </div>
 
+<!-- New dashboard statistics row -->
+<div class="row mb-3">
+  <div class="col-sm-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric">
+          <span class="dh-metric-icon success"><i class="fas fa-user-friends"></i></span>
+          <div>
+            <div class="dh-metric-value">{{ total_patients }}</div>
+            <div class="dh-metric-label">Total patients</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric">
+          <span class="dh-metric-icon warning"><i class="fas fa-calendar-day"></i></span>
+          <div>
+            <div class="dh-metric-value">{{ today_assessments }}</div>
+            <div class="dh-metric-label">Today's assessments</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric">
+          <span class="dh-metric-icon primary"><i class="fas fa-user-check"></i></span>
+          <div>
+            <div class="dh-metric-value">{{ active_patients }}</div>
+            <div class="dh-metric-label">Active (30 days)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="dh-metric">
+          <span class="dh-metric-icon info"><i class="fas fa-percent"></i></span>
+          <div>
+            <div class="dh-metric-value text-primary">
+              {% if risk_distribution %}
+                {% for item in risk_distribution %}
+                  {{ item.risk_level }}: {{ item.count }}
+                {% endfor %}
+              {% endif %}
+            </div>
+            <div class="dh-metric-label">Risk distribution</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row row-cards mb-3">
+
 <div class="card">
   <div class="card-header">
     <h3 class="card-title">All patient reports</h3>
@@ -73,6 +137,7 @@
           <th>Date</th>
           <th>Score</th>
           <th>Risk level</th>
+          <th>Status</th>
           <th>BMI</th>
           <th>Blood pressure</th>
           <th class="w-1"></th>
@@ -93,6 +158,9 @@
             <td class="text-secondary">{{ record.created_at|date:"d M Y, H:i" }}</td>
             <td class="fw-bold">{{ record.risk_score }}</td>
             <td><span class="badge bg-{{ record.level_colour }}">{{ record.risk_level }}</span></td>
+            <td>
+              <span class="badge bg-{% if record.is_reviewed %}success{% else %}warning{% endif %}">{{ record.is_reviewed|yesno:"Reviewed,Awaiting review" }}</span>
+            </td>
             <td>{{ record.bmi|default:"-" }}</td>
             <td>{{ record.systolic }}/{{ record.diastolic }}</td>
             <td>
